@@ -1,25 +1,471 @@
-# FinX- Frontend Monorepo
+# FINX
 
-## 🚀 Setup Instructions
+### Milestone-Based Payments for Modern Businesses
 
-FINX is a true monorepo structure. You only need to run ONE command to boot the entire stack natively!
+FINX helps businesses manage project payments with confidence by connecting **milestones, deliverables, approvals, and payments** in one transparent workflow.
 
-1. Open a terminal in the ROOT of this project.
-2. Run `npm install`
-3. Run `npm run dev`
+> **Build trust. Fund progress. Release with confidence.**
 
-The `npm run dev` script uses NPM workspaces to boot the Next.js frontend on `localhost:3000` and the Express API on `localhost:8080`.
+---
 
-## 📦 Architecture
+## 🚀 Why FINX?
 
-- **`frontend/`**: The Next.js 15+ React App (Tailwind, Zustand, Axios).
-- **`backend/`**: Express.js + Typescript API strictly honoring the backend interface contracts.
-- **`db/`**: The persistent filesystem JSON storage to prevent complex driver bugs on local windows.
+B2B projects often fail because payment and delivery are disconnected.
 
-## ✅ Day 6 Admin Dashboards, Analytics & Audit Logging
+Businesses face:
 
-- **Master Admin (`/admin`)**: Fully comprehensive overview indexing users, vault locks, and failures mapped precisely across components! Includes deep link UI sub-panels for `Users`, `Escrow`, and `Audit Logs`.
-- **Finance Master (`/finance`)**: Dedicated analytics tracking fiat flow schemas exactly as constrained! Added reporting interfaces that successfully map against generic backend aggregates securely masking sensitive backend node data.
-- **Audit Ledger System**: Fully implemented immutable grid capturing actions (User Logins, Vault Transfers) exactly mapping to `ADMIN` view hierarchies correctly isolating read-states from mutable logic models.
+* Unclear project progress
+* Delayed vendor payments
+* Upfront payment risk
+* Manual invoice and milestone tracking
+* Poor visibility into fund movement
+* Difficult dispute resolution
 
-This perfectly sets up Day 7 for production deployment validations! Outstanding implementation!
+FINX brings all project stakeholders into one controlled payment workflow.
+
+---
+
+## 💡 How It Works
+
+```text
+Create Project
+      ↓
+Define Milestones
+      ↓
+Assign Vendor
+      ↓
+Fund Milestone
+      ↓
+Vendor Submits Work
+      ↓
+Project Manager Approves
+      ↓
+Payment Release Authorized
+      ↓
+Vendor Gets Paid
+```
+
+FINX is designed to make every payment traceable to a specific project milestone.
+
+---
+
+## 👥 Built for Every Stakeholder
+
+| Role                    | Main Responsibility                                     |
+| ----------------------- | ------------------------------------------------------- |
+| **Corporate / Buyer**   | Creates projects, funds milestones, and tracks payments |
+| **Vendor / Freelancer** | Completes work and submits deliverables                 |
+| **Project Manager**     | Reviews work and approves milestones                    |
+| **FINX Admin**          | Manages releases, disputes, and platform operations     |
+| **Finance Team**        | Tracks transactions, settlements, and reports           |
+
+---
+
+## ✨ Core Features
+
+### Project Management
+
+* Create and manage B2B projects
+* Assign vendors
+* Define budgets and deadlines
+* Track project status
+* View project participants
+
+### Milestone-Based Workflow
+
+* Create project milestones
+* Start and submit work
+* Upload deliverables
+* Review and approve submissions
+* Reject or request changes
+* Track milestone completion
+
+### Payment Management
+
+* Create payment orders
+* Integrate Razorpay Checkout
+* Verify payments server-side
+* Process payment webhooks
+* Track payment status
+* Maintain payment history
+
+### Escrow-Style Release Workflow
+
+* Connect payments to milestones
+* Require project approval
+* Authorize releases through operations
+* Prevent duplicate releases
+* Track release history
+* Manage disputes
+
+### Admin and Finance
+
+* User management
+* Project monitoring
+* Payment monitoring
+* Release management
+* Transaction reconciliation
+* Settlement tracking
+* Invoice records
+* Financial reports
+* Immutable audit logs
+
+---
+
+## 🏗️ Product Architecture
+
+```text
+                         ┌──────────────────────┐
+                         │      FINX Web App    │
+                         │       Next.js        │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │      REST APIs       │
+                         │     Spring Boot      │
+                         └──────────┬───────────┘
+                                    │
+        ┌───────────────────────────┼───────────────────────────┐
+        ▼                           ▼                           ▼
+┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
+│ Auth & Roles    │       │ Project Engine  │       │ Payment Engine  │
+│ JWT / RBAC      │       │ Milestones      │       │ Razorpay        │
+└─────────────────┘       └─────────────────┘       └─────────────────┘
+        │                           │                           │
+        └───────────────────────────┼───────────────────────────┘
+                                    ▼
+                         ┌──────────────────────┐
+                         │     PostgreSQL       │
+                         └──────────────────────┘
+                                    │
+                         ┌──────────────────────┐
+                         │        Redis         │
+                         └──────────────────────┘
+```
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer           | Technology                 |
+| --------------- | -------------------------- |
+| Frontend        | Next.js, React, TypeScript |
+| Styling         | Tailwind CSS               |
+| Backend         | Java, Spring Boot          |
+| Security        | Spring Security, JWT       |
+| Database        | PostgreSQL                 |
+| Cache           | Redis                      |
+| Payments        | Razorpay                   |
+| Infrastructure  | Docker, Docker Compose     |
+| Deployment      | Render or cloud hosting    |
+| Version Control | GitHub                     |
+
+---
+
+## 📂 Repository Structure
+
+```text
+finx/
+├── frontend/
+│   ├── app/
+│   │   ├── auth/
+│   │   ├── buyer/
+│   │   ├── vendor/
+│   │   ├── project-manager/
+│   │   ├── admin/
+│   │   └── finance/
+│   ├── components/
+│   ├── services/
+│   ├── hooks/
+│   ├── lib/
+│   └── types/
+│
+├── backend/
+│   ├── src/main/java/com/finx/
+│   │   ├── auth/
+│   │   ├── user/
+│   │   ├── project/
+│   │   ├── milestone/
+│   │   ├── payment/
+│   │   ├── escrow/
+│   │   ├── dispute/
+│   │   ├── finance/
+│   │   ├── notification/
+│   │   └── audit/
+│   └── pom.xml
+│
+├── docker-compose.yml
+├── .env.example
+└── README.md
+```
+
+---
+
+## ⚡ Getting Started
+
+### Prerequisites
+
+Install the following before running FINX:
+
+* Node.js 18+
+* Java 17+
+* Maven
+* PostgreSQL
+* Redis
+* Docker
+* Razorpay test account
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/your-username/finx.git
+cd finx
+```
+
+### Start PostgreSQL and Redis
+
+```bash
+docker compose up -d postgres redis
+```
+
+### Configure Environment Variables
+
+```bash
+cp .env.example .env
+```
+
+Example configuration:
+
+```env
+DATABASE_URL=jdbc:postgresql://localhost:5432/finx
+DATABASE_USERNAME=postgres
+DATABASE_PASSWORD=your_password
+
+JWT_SECRET=your_secure_jwt_secret
+
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+RAZORPAY_WEBHOOK_SECRET=your_webhook_secret
+
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+NEXT_PUBLIC_API_URL=http://localhost:8080/api
+NEXT_PUBLIC_RAZORPAY_KEY_ID=your_razorpay_public_key
+```
+
+### Run Backend
+
+```bash
+cd backend
+./mvnw spring-boot:run
+```
+
+Backend:
+
+```text
+http://localhost:8080
+```
+
+### Run Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend:
+
+```text
+http://localhost:3000
+```
+
+---
+
+## 🔐 Security Principles
+
+FINX is designed around secure financial workflows.
+
+* Payment amounts are validated by the backend.
+* Frontend payment status is never trusted.
+* Razorpay signatures are verified server-side.
+* Webhooks are validated before processing.
+* Idempotency prevents duplicate payment actions.
+* Release operations are protected against duplication.
+* Role-based and resource-level authorization is enforced.
+* Secrets are stored in environment variables.
+* Sensitive information is excluded from logs.
+* Audit logs are append-only.
+* Database transactions protect financial state changes.
+* Production traffic must use HTTPS.
+
+---
+
+## 🧪 Testing
+
+### Backend
+
+```bash
+cd backend
+./mvnw test
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm run lint
+npm run typecheck
+npm run build
+```
+
+### Critical Test Cases
+
+* Registration and login
+* Role-based route protection
+* Unauthorized project access
+* Project creation
+* Vendor acceptance
+* Milestone submission
+* Milestone approval and rejection
+* Successful payment
+* Failed payment
+* Invalid webhook signature
+* Duplicate webhook processing
+* Duplicate release attempt
+* Dispute creation
+* Audit-log generation
+* Finance reconciliation
+
+---
+
+## 🗺️ Roadmap
+
+### Current MVP
+
+* [x] Authentication and role management
+* [x] Corporate dashboard
+* [x] Vendor dashboard
+* [x] Project manager dashboard
+* [x] Admin dashboard
+* [x] Finance dashboard
+* [x] Project management
+* [x] Milestone workflow
+* [x] Razorpay payment integration
+* [x] Release management
+* [x] Audit logs
+
+### Next
+
+* [ ] Automated notifications
+* [ ] Advanced dispute resolution
+* [ ] Vendor ratings
+* [ ] Invoice automation
+* [ ] Advanced analytics
+* [ ] KYC/KYB integrations
+* [ ] Enterprise approval workflows
+* [ ] ERP integrations
+* [ ] White-label platform
+* [ ] Regulated financial partner integration
+
+---
+
+## 📈 Product Metrics
+
+FINX tracks metrics that demonstrate business value:
+
+* Projects created
+* Active businesses
+* Active vendors
+* Milestones completed
+* Payment success rate
+* Total payment volume
+* Average release time
+* Dispute rate
+* Repeat customer rate
+
+---
+
+## 💰 Business Model
+
+Potential revenue streams include:
+
+* Transaction fees
+* Business subscriptions
+* Enterprise plans
+* Premium analytics
+* Vendor management tools
+* API access
+* White-label workflows
+* Reconciliation and finance automation
+
+Pricing will depend on payment gateway fees, compliance requirements, operational costs, refunds, and dispute handling.
+
+---
+
+## ⚠️ Compliance Notice
+
+FINX is an MVP payment workflow platform.
+
+FINX must not represent itself as a regulated escrow provider without the required authorization or a compliant regulated partner. Before production launch, the platform may require:
+
+* KYC and KYB
+* AML controls
+* Payment regulations
+* Escrow or payment-partner compliance
+* GST and tax compliance
+* Data protection controls
+* Financial reconciliation
+* Legal review of fund custody and release operations
+
+Use Razorpay test mode during development.
+
+---
+
+## 🤝 Team
+
+### Gowri — Backend and Infrastructure
+
+* Spring Boot APIs
+* Database architecture
+* Authentication and authorization
+* Payment services
+* Escrow workflow
+* Redis
+* Deployment
+
+### Mahasuf — Frontend and Integration
+
+* Next.js application
+* Role-based dashboards
+* Project and milestone interfaces
+* Razorpay Checkout
+* API integration
+* UI testing
+* Product experience
+
+---
+
+## 🌍 Vision
+
+FINX aims to become the trusted payment infrastructure for milestone-driven business relationships.
+
+**From project creation to final settlement, FINX makes every step visible, verifiable, and accountable.**
+
+---
+
+## 📄 License
+
+This project is currently intended for MVP, educational, and hackathon development.
+
+A suitable open-source or commercial license should be added before public production release.
+
+---
+
+## 📬 Contact
+
+For collaboration, partnerships, or product discussions, contact the FINX team.
+
+**FINX — Fund Progress. Release Trust.**
