@@ -65,10 +65,28 @@ export interface Milestone {
   updatedAt: string;
 }
 
+export type PaymentStatus =
+  | "NOT_FUNDED"
+  | "ORDER_CREATED"
+  | "PAYMENT_PENDING"
+  | "PAYMENT_PROCESSING"
+  | "PAYMENT_SUCCESS"
+  | "PAYMENT_FAILED"
+  | "PAYMENT_VERIFICATION_PENDING"
+  | "REFUNDED"
+  | "CANCELLED";
+
 export interface Payment {
   id: string;
+  projectId: string;
+  milestoneId: string;
   amount: number;
-  status: 'PENDING' | 'SUCCESS' | 'FAILED';
+  currency: string;
+  status: PaymentStatus;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface EscrowTransaction {

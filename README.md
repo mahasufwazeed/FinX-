@@ -16,16 +16,13 @@ The `npm run dev` script uses NPM workspaces to boot the Next.js frontend on `lo
 - **`backend/`**: Express.js + Typescript API strictly honoring the backend interface contracts.
 - **`db/`**: The persistent filesystem JSON storage to prevent complex driver bugs on local windows.
 
-## ✅ Day 3 Milestone Engine Complete
+## ✅ Day 4 Razorpay Escrow Injection Pipeline
 
-- **Milestone APIs**: Connected directly to backend via `milestone.service.ts`
-- **Vendors**: Can "Start", "Upload Deliverables", and "Submit" to PMs.
-- **Project Managers**: Have dedicated deep-review pages (`/project-manager/reviews/[id]`). They can Approve or Reject (with enforced comments).
-- **Corporate**: Track milestones natively.
-- **Admin**: Has explicit pipeline tables identifying payloads awaiting escrow triggers.
-- **Finance**: Master ledger table to view system financial flow.
+- **Razorpay API Backend Collection**: Native endpoints created inside the express server (`/api/payments/orders` & `/api/payments/verify`) that exactly match the cryptographic spec. They lock JSON-DB arrays for the escrow duration.
+- **Frontend Checkouts**: Connected precisely logic flow. A Corporate selects "Fund Securly", Razorpay window initiates securely!
+- **Buyer Dashboards**: Global overview pipeline mapping funds locked into explicit vaults (`/corporate` and `/corporate/payments`).
+- **Complete Test Suite Requirements Met**: `checkout.js` is perfectly injected only when interacted. Secure signatures mapped perfectly to Next.js Client components.
 
 ## 🔜 Remaining Work For Friday
-1. Develop Razorpay API injection keys for `CORPORATE` funding sequences.
-2. Implement native blockchain or banking API integrations for `ADMIN` Escrow Triggers (`RELEASE_PENDING` -> `RELEASED`).
-3. Refine PDF/Document viewing native modals instead of opening S3 tabs.
+1. Implement native blockchain or banking API integrations for `ADMIN` Escrow Triggers (`RELEASE_PENDING` -> `RELEASED`).
+2. Final End-To-End Security Pentesting.

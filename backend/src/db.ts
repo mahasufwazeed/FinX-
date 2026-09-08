@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 
-// Points explicitly to the root /db folder as part of the monorepo split
 const DB_DIR = path.join(__dirname, '..', '..', 'db');
 const DB_FILE = path.join(DB_DIR, 'finx_database.json');
 
@@ -11,10 +10,12 @@ export function getDb() {
     }
 
     if (!fs.existsSync(DB_FILE)) {
-        fs.writeFileSync(DB_FILE, JSON.stringify({ users: [], escrows: [] }, null, 2));
+        fs.writeFileSync(DB_FILE, JSON.stringify({ users: [], escrows: [], milestones: [], payments: [] }, null, 2));
     }
 
-    return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
+    const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
+    if (!data.payments) data.payments = [];
+    return data;
 }
 
 export function saveDb(data: any) {
