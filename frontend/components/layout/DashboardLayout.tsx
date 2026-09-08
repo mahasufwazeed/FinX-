@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
     Users, Briefcase, CreditCard, ShieldCheck,
-    Settings, LogOut, Menu, Bell, X
+    Settings, LogOut, Menu, Bell, X, FileText, FileSpreadsheet, Activity, CheckSquare
 } from "lucide-react";
 
 export const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
@@ -14,38 +14,67 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
     const pathname = usePathname();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+    // Helper Breadcrumbs
+    const pathSegments = pathname.split('/').filter(Boolean);
+    const breadcrumbs = pathSegments.map((segment, index) => {
+        const href = '/' + pathSegments.slice(0, index + 1).join('/');
+        return { name: segment.charAt(0).toUpperCase() + segment.slice(1).replace('-', ' '), href };
+    });
+
     const getNavLinks = () => {
         const baseLinks = [
-            { name: "Settings", href: "/settings", icon: Settings },
+            { name: "Settings", href: `/${user?.role?.toLowerCase().replace('_', '-')}/settings`, icon: Settings },
         ];
 
-        if (user?.role === "ADMIN") {
-            return [
-                { name: "Overview", href: "/admin", icon: ShieldCheck },
-                { name: "All Deals", href: "/admin/deals", icon: Briefcase },
-                { name: "Users", href: "/admin/users", icon: Users },
-                { name: "Audit Logs", href: "/admin/audit", icon: ShieldCheck },
-                ...baseLinks
-            ];
+        switch (user?.role) {
+            case "ADMIN":
+                return [
+                    { name: "Overview", href: "/admin", icon: Activity },
+                    { name: "Users", href: "/admin/users", icon: Users },
+                    { name: "Projects", href: "/admin/projects", icon: Briefcase },
+                    { name: "Escrow Transactions", href: "/admin/escrow", icon: ShieldCheck },
+                    { name: "Disputes", href: "/admin/disputes", icon: ShieldCheck },
+                    { name: "Audit Logs", href: "/admin/audit", icon: FileText },
+                    ...baseLinks
+                ];
+            case "FINANCE":
+                return [
+                    { name: "Overview", href: "/finance", icon: Activity },
+                    { name: "Payments", href: "/finance/payments", icon: CreditCard },
+                    { name: "Invoices", href: "/finance/invoices", icon: FileSpreadsheet },
+                    { name: "Transactions", href: "/finance/transactions", icon: Briefcase },
+                    { name: "Reports", href: "/finance/reports", icon: FileText },
+                    ...baseLinks
+                ];
+            case "PROJECT_MANAGER":
+                return [
+                    { name: "Overview", href: "/project-manager", icon: Activity },
+                    { name: "Projects", href: "/project-manager/projects", icon: Briefcase },
+                    { name: "Milestone Reviews", href: "/project-manager/reviews", icon: CheckSquare },
+                    { name: "Deliverables", href: "/project-manager/deliverables", icon: FileText },
+                    { name: "Reports", href: "/project-manager/reports", icon: FileSpreadsheet },
+                    ...baseLinks
+                ];
+            case "VENDOR":
+                return [
+                    { name: "Overview", href: "/vendor", icon: Activity },
+                    { name: "My Projects", href: "/vendor/projects", icon: Briefcase },
+                    { name: "Milestones", href: "/vendor/milestones", icon: CheckSquare },
+                    { name: "Deliverables", href: "/vendor/deliverables", icon: FileText },
+                    { name: "Payments", href: "/vendor/payments", icon: CreditCard },
+                    ...baseLinks
+                ];
+            case "CORPORATE":
+            default:
+                return [
+                    { name: "Overview", href: "/corporate", icon: Activity },
+                    { name: "Projects", href: "/corporate/projects", icon: Briefcase },
+                    { name: "Milestones", href: "/corporate/milestones", icon: CheckSquare },
+                    { name: "Payments", href: "/corporate/payments", icon: CreditCard },
+                    { name: "Escrow", href: "/corporate/escrow", icon: ShieldCheck },
+                    ...baseLinks
+                ];
         }
-
-        if (user?.role === "SELLER") {
-            return [
-                { name: "Overview", href: "/seller", icon: Briefcase },
-                { name: "My Deals", href: "/seller/deals", icon: Briefcase },
-                { name: "Milestones", href: "/seller/milestones", icon: ShieldCheck },
-                { name: "Payments", href: "/seller/payments", icon: CreditCard },
-                ...baseLinks
-            ];
-        }
-
-        return [
-            { name: "Overview", href: "/buyer", icon: Briefcase },
-            { name: "My Deals", href: "/buyer/deals", icon: Briefcase },
-            { name: "Funded Milestones", href: "/buyer/milestones", icon: ShieldCheck },
-            { name: "Payments", href: "/buyer/payments", icon: CreditCard },
-            ...baseLinks
-        ];
     };
 
     const navLinks = getNavLinks();
@@ -61,7 +90,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                 <nav className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
                     {navLinks.map((link) => {
                         const Icon = link.icon;
-                        const isActive = pathname === link.href;
+                        const isActive = pathname === link.href || (pathname.startsWith(link.href) && link.href !== `/${user?.role?.toLowerCase().replace('_', '-')}`);
                         return (
                             <Link
                                 key={link.name}
@@ -80,17 +109,17 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
 
                 <div className="p-4 border-t border-slate-200">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold">
+                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold uppercase">
                             {user?.fullName?.charAt(0) || "U"}
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-slate-900 truncate">{user?.fullName}</p>
-                            <p className="text-xs text-slate-500 truncate">{user?.role}</p>
+                            <p className="text-xs text-slate-500 truncate">{user?.role?.replace('_', ' ')}</p>
                         </div>
                     </div>
                     <button
                         onClick={logout}
-                        className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                        className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-700 transition-colors"
                     >
                         <LogOut size={18} />
                         Sign Out
@@ -139,7 +168,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                 <div className="p-4 border-t border-slate-200">
                     <button
                         onClick={logout}
-                        className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                        className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-sm font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 transition-colors"
                     >
                         <LogOut size={18} />
                         Sign Out
@@ -158,14 +187,22 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                         >
                             <Menu size={20} />
                         </button>
-                        <h2 className="text-lg font-semibold text-slate-800 capitalize">
-                            {pathname.split("/")[1] || "Dashboard"}
-                        </h2>
+                        <div className="hidden sm:flex items-center text-sm">
+                            {breadcrumbs.map((crumb, idx) => (
+                                <React.Fragment key={crumb.href}>
+                                    {idx > 0 && <span className="mx-2 text-slate-300">/</span>}
+                                    <Link href={crumb.href} className={`${idx === breadcrumbs.length - 1 ? 'text-slate-800 font-semibold' : 'text-slate-500 hover:text-slate-700'}`}>
+                                        {crumb.name}
+                                    </Link>
+                                </React.Fragment>
+                            ))}
+                            {breadcrumbs.length === 0 && <span className="text-slate-800 font-semibold">Dashboard</span>}
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-4">
                         <button className="relative p-2 text-slate-400 hover:text-slate-500 transition-colors">
-                            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500"></span>
+                            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-blue-500"></span>
                             <Bell size={20} />
                         </button>
                     </div>

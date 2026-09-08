@@ -14,10 +14,14 @@ export default function DashboardRedirect() {
                 router.push("/login");
             } else if (user.role === "ADMIN") {
                 router.push("/admin");
-            } else if (user.role === "SELLER") {
-                router.push("/seller");
+            } else if (user.role === "FINANCE") {
+                router.push("/finance");
+            } else if (user.role === "PROJECT_MANAGER") {
+                router.push("/project-manager");
+            } else if (user.role === "VENDOR") {
+                router.push("/vendor");
             } else {
-                router.push("/buyer");
+                router.push("/corporate");
             }
         }
     }, [user, isLoading, router]);

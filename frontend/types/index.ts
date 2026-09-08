@@ -1,4 +1,4 @@
-export type Role = "BUYER" | "SELLER" | "ADMIN";
+export type Role = "CORPORATE" | "VENDOR" | "PROJECT_MANAGER" | "ADMIN" | "FINANCE";
 
 export interface User {
   id: string;
@@ -25,7 +25,7 @@ export interface ApiError {
 }
 
 // Future contracts
-export interface Deal {
+export interface Project {
   id: string;
   title: string;
   status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'DISPUTED';
@@ -34,10 +34,17 @@ export interface Deal {
 
 export interface Milestone {
   id: string;
-  dealId: string;
+  projectId: string;
   description: string;
   amount: number;
   status: 'PENDING' | 'FUNDED' | 'REVIEW' | 'APPROVED' | 'RELEASED' | 'DISPUTED';
+}
+
+export interface Deliverable {
+  id: string;
+  milestoneId: string;
+  details: string;
+  status: 'SUBMITTED' | 'APPROVED' | 'REJECTED';
 }
 
 export interface Payment {
@@ -51,6 +58,21 @@ export interface EscrowTransaction {
   milestoneId: string;
   amount: number;
   status: 'HELD' | 'RELEASED' | 'REFUNDED';
+}
+
+export interface Invoice {
+  id: string;
+  paymentId: string;
+  amount: number;
+  date: string;
+}
+
+export interface Dispute {
+  id: string;
+  projectId: string;
+  milestoneId: string;
+  reason: string;
+  status: 'OPEN' | 'RESOLVED';
 }
 
 export interface AuditLog {

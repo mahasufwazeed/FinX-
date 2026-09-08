@@ -67,8 +67,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const redirectBasedOnRole = (role: Role) => {
         if (role === "ADMIN") router.push("/admin");
-        else if (role === "SELLER") router.push("/seller");
-        else router.push("/buyer");
+        else if (role === "FINANCE") router.push("/finance");
+        else if (role === "PROJECT_MANAGER") router.push("/project-manager");
+        else if (role === "VENDOR") router.push("/vendor");
+        else router.push("/corporate");
     };
 
     // Route guarding

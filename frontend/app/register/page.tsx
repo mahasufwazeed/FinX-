@@ -16,7 +16,7 @@ const registerSchema = z.object({
     email: z.string().email({ message: "Invalid email address" }),
     password: z.string().min(8, { message: "Password must be at least 8 characters" }),
     confirmPassword: z.string(),
-    role: z.enum(["BUYER", "SELLER"], { required_error: "Please select a role" }),
+    role: z.enum(["CORPORATE", "VENDOR", "PROJECT_MANAGER", "FINANCE"], { required_error: "Please select a role" }),
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
@@ -116,14 +116,22 @@ export default function RegisterPage() {
 
                             <div className="space-y-1">
                                 <label className="block text-sm font-medium text-slate-700">I am a...</label>
-                                <div className="flex gap-4">
+                                <div className="grid grid-cols-2 gap-4">
                                     <label className="flex items-center gap-2">
-                                        <input type="radio" value="BUYER" {...register("role")} className="text-blue-600 focus:ring-blue-500" />
-                                        <span className="text-sm text-slate-700">Buyer</span>
+                                        <input type="radio" value="CORPORATE" {...register("role")} className="text-blue-600 focus:ring-blue-500" />
+                                        <span className="text-sm text-slate-700">Corporate (Buyer)</span>
                                     </label>
                                     <label className="flex items-center gap-2">
-                                        <input type="radio" value="SELLER" {...register("role")} className="text-blue-600 focus:ring-blue-500" />
-                                        <span className="text-sm text-slate-700">Seller / Service Provider</span>
+                                        <input type="radio" value="VENDOR" {...register("role")} className="text-blue-600 focus:ring-blue-500" />
+                                        <span className="text-sm text-slate-700">Vendor</span>
+                                    </label>
+                                    <label className="flex items-center gap-2">
+                                        <input type="radio" value="PROJECT_MANAGER" {...register("role")} className="text-blue-600 focus:ring-blue-500" />
+                                        <span className="text-sm text-slate-700">Project Manager</span>
+                                    </label>
+                                    <label className="flex items-center gap-2">
+                                        <input type="radio" value="FINANCE" {...register("role")} className="text-blue-600 focus:ring-blue-500" />
+                                        <span className="text-sm text-slate-700">Finance</span>
                                     </label>
                                 </div>
                                 {errors.role && <p className="mt-1 text-sm text-red-500">{errors.role.message}</p>}

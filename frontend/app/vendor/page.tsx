@@ -2,22 +2,22 @@
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/Card";
-import { Users, Briefcase, Activity, AlertTriangle, Lock } from "lucide-react";
+import { Briefcase, CheckCircle, RefreshCcw, DollarSign } from "lucide-react";
 
-export default function AdminDashboard() {
+export default function VendorDashboard() {
     const stats = [
-        { name: "Total Projects", value: "324", icon: Briefcase, change: "+8 this week" },
-        { name: "Active Escrow TX", value: "$4.1M", icon: Activity, change: "Volume held" },
-        { name: "Pending Release Requests", value: "8", icon: Lock, change: "Escrow unlocks" },
-        { name: "Pending Disputes", value: "2", icon: AlertTriangle, change: "Requires mediation attention" },
+        { name: "Active Projects", value: "5", icon: Briefcase, change: "1 new request" },
+        { name: "Pending Deliverables", value: "3", icon: RefreshCcw, change: "Awaiting submission" },
+        { name: "Completed Milestones", value: "18", icon: CheckCircle, change: "2 this week" },
+        { name: "Received Payments", value: "$32,500", icon: DollarSign, change: "+$4,000 this month" },
     ];
 
     return (
         <DashboardLayout>
             <div className="space-y-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">FINX Admin & Escrow Operator</h1>
-                    <p className="text-sm text-slate-500 mt-1">Platform metrics, user oversight, and escalation management.</p>
+                    <h1 className="text-2xl font-bold text-slate-900">Vendor Overview</h1>
+                    <p className="text-sm text-slate-500 mt-1">Track your active work, deliverables, and pending payments.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -44,22 +44,32 @@ export default function AdminDashboard() {
                     })}
                 </div>
 
-                <h2 className="text-lg font-semibold text-slate-900 mt-8 mb-4">Recent Escrow Transactions</h2>
+                <h2 className="text-lg font-semibold text-slate-900 mt-8 mb-4">Pending Approvals</h2>
                 <Card>
                     <div className="divide-y divide-slate-100">
                         <div className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
                             <div>
-                                <p className="text-sm font-medium text-slate-900">$5,000 Released</p>
-                                <p className="text-xs text-slate-500">Milestone 2 - App Dev Deal</p>
+                                <p className="text-sm font-medium text-slate-900">Frontend Foundation Completed</p>
+                                <p className="text-xs text-slate-500">Project: Platform MVP Development</p>
                             </div>
-                            <span className="text-sm text-slate-500">10 mins ago</span>
+                            <div className="text-right">
+                                <span className="inline-flex items-center rounded-full bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                                    Awaiting Review
+                                </span>
+                                <p className="text-xs text-slate-500 mt-1">Submitted 4 hours ago</p>
+                            </div>
                         </div>
                         <div className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
                             <div>
-                                <p className="text-sm font-medium text-slate-900">$2,500 Held in Escrow</p>
-                                <p className="text-xs text-slate-500">Milestone 1 - Design Services</p>
+                                <p className="text-sm font-medium text-slate-900">Logo Design V2</p>
+                                <p className="text-xs text-slate-500">Project: Brand Identity</p>
                             </div>
-                            <span className="text-sm text-slate-500">1 hour ago</span>
+                            <div className="text-right">
+                                <span className="inline-flex items-center rounded-full bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                                    Awaiting Review
+                                </span>
+                                <p className="text-xs text-slate-500 mt-1">Submitted 1 day ago</p>
+                            </div>
                         </div>
                     </div>
                 </Card>

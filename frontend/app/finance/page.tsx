@@ -1,23 +1,23 @@
 "use client";
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Briefcase, CheckCircle, RefreshCcw, DollarSign } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/Card";
+import { DollarSign, Clock, CheckCircle, FileSpreadsheet } from "lucide-react";
 
-export default function SellerDashboard() {
+export default function FinanceDashboard() {
     const stats = [
-        { name: "Active Deals", value: "5", icon: Briefcase, change: "1 new request" },
-        { name: "Completed Milestones", value: "18", icon: CheckCircle, change: "2 this week" },
-        { name: "Pending Approvals", value: "3", icon: RefreshCcw, change: "Awaiting buyer review" },
-        { name: "Received Payments", value: "$32,500", icon: DollarSign, change: "+$4,000 this month" },
+        { name: "Total Payment Volume", value: "$4.2M", icon: DollarSign, change: "All time" },
+        { name: "Pending Payments", value: "$125k", icon: Clock, change: "Accrued this week" },
+        { name: "Completed Payments", value: "342", icon: CheckCircle, change: "Successfully processed" },
+        { name: "Invoice Count", value: "12", icon: FileSpreadsheet, change: "Requires reconciliation" },
     ];
 
     return (
         <DashboardLayout>
             <div className="space-y-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Seller Overview</h1>
-                    <p className="text-sm text-slate-500 mt-1">Track your active work, approvals, and earnings.</p>
+                    <h1 className="text-2xl font-bold text-slate-900">Finance & Accounts Overview</h1>
+                    <p className="text-sm text-slate-500 mt-1">Review payment volumes, track escrow release requests, and reconcile invoices.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -44,32 +44,18 @@ export default function SellerDashboard() {
                     })}
                 </div>
 
-                <h2 className="text-lg font-semibold text-slate-900 mt-8 mb-4">Pending Approvals</h2>
+                <h2 className="text-lg font-semibold text-slate-900 mt-8 mb-4">Pending Escrow Releases</h2>
                 <Card>
                     <div className="divide-y divide-slate-100">
-                        {/* Mock recent activity */}
                         <div className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
                             <div>
-                                <p className="text-sm font-medium text-slate-900">Frontend Foundation Completed</p>
-                                <p className="text-xs text-slate-500">Deal: Platform MVP Development</p>
+                                <p className="text-sm font-medium text-slate-900">Release Request: $15,000</p>
+                                <p className="text-xs text-slate-500">Project: Frontend MVP Milestone 1</p>
                             </div>
                             <div className="text-right">
                                 <span className="inline-flex items-center rounded-full bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
-                                    Awaiting Review
+                                    Awaiting Finance Verifcation
                                 </span>
-                                <p className="text-xs text-slate-500 mt-1">Submitted 4 hours ago</p>
-                            </div>
-                        </div>
-                        <div className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                            <div>
-                                <p className="text-sm font-medium text-slate-900">Logo Design V2</p>
-                                <p className="text-xs text-slate-500">Deal: Brand Identity</p>
-                            </div>
-                            <div className="text-right">
-                                <span className="inline-flex items-center rounded-full bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
-                                    Awaiting Review
-                                </span>
-                                <p className="text-xs text-slate-500 mt-1">Submitted 1 day ago</p>
                             </div>
                         </div>
                     </div>

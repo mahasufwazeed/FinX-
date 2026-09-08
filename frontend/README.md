@@ -1,50 +1,22 @@
-# FINX Frontend - Tuesday Foundation
+# FINX Frontend Foundation
 
-FINX is a B2B milestone-based fiat escrow platform connecting Buyers, Sellers, and Admins.
+This is the Tuesday MVP Foundation for FINX, a B2B milestone-based fiat escrow platform.
 
-## Stack
-- Next.js 15+ (App Router)
-- React 19
-- Tailwind CSS v4
-- React Hook Form + Zod
-- Axios
-- Lucide React
+## Roles
+- `CORPORATE`
+- `VENDOR`
+- `PROJECT_MANAGER`
+- `ADMIN`
+- `FINANCE`
 
-## Project Structure
-- `/app`: Next.js App Router dynamic & static pages.
-- `/components/auth`: Authentication logic (Providers).
-- `/components/ui`: Common generic UI components like Buttons and Inputs.
-- `/components/layout`: Primary structural layouts (Dashboard, Sidebar).
-- `/hooks`: React hooks.
-- `/lib`: Axios setup & utility scripts.
-- `/services`: Interface with REST APIs.
-- `/types`: Domain contracts and shared typing.
+## Setup Instructions
+1. Install dependencies: `npm install`
+2. Start development server: `npm run dev`
+3. Set your environment variable: `NEXT_PUBLIC_API_URL=http://localhost:8080/api`
 
-## Getting Started
-
-1. Ensure Node.js 18+ is installed.
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Copy local environment variables:
-   Ensure `.env.local` is present with:
-   ```env
-   NEXT_PUBLIC_API_URL=http://localhost:8080/api
-   ```
-4. Run the development server:
-   ```bash
-   npm run dev
-   ```
-
-## Remaining work for Wednesday
-- Integrate real backend functionality (Razorpay processing, escrow transaction workflows).
-- Build the concrete UI tools for Deal setup, Milestone tracking, and Payment status dashboards.
-- Finalize error boundary integrations.
-
-## Features Implemented
-- Strict Role-Based Routing (Buyer, Seller, Admin)
-- Full App Foundation & Directory Layout
-- Responsive Modern Auth UI and State Handlers
-- Modern Dashboard interfaces per role (B2B SaaS Theme)
-- Axios token automatic refresh system configuration
+## Current Status
+- Next.js 15+ App Router configured.
+- Authentication forms built visually and integrated via Axios with Token Refresh interceptors.
+- Placeholders implemented for the five dashboard ecosystems.
+- No dummy/mock logic for backend requests—pure API contracts. 
+- Fully compliant with the Tuesday Scope definition.

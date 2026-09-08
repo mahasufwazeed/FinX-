@@ -2,22 +2,22 @@
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/Card";
-import { Users, Briefcase, Activity, AlertTriangle, Lock } from "lucide-react";
+import { Briefcase, Activity, CheckSquare, ListTodo } from "lucide-react";
 
-export default function AdminDashboard() {
+export default function ProjectManagerDashboard() {
     const stats = [
-        { name: "Total Projects", value: "324", icon: Briefcase, change: "+8 this week" },
-        { name: "Active Escrow TX", value: "$4.1M", icon: Activity, change: "Volume held" },
-        { name: "Pending Release Requests", value: "8", icon: Lock, change: "Escrow unlocks" },
-        { name: "Pending Disputes", value: "2", icon: AlertTriangle, change: "Requires mediation attention" },
+        { name: "Assigned Projects", value: "8", icon: Briefcase, change: "Active tracking" },
+        { name: "Pending Reviews", value: "5", icon: ListTodo, change: "Requires attention" },
+        { name: "Milestones Awaiting Approval", value: "3", icon: CheckSquare, change: "Ready for sign-off" },
+        { name: "Project Progress", value: "64%", icon: Activity, change: "Average completion rate" },
     ];
 
     return (
         <DashboardLayout>
             <div className="space-y-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">FINX Admin & Escrow Operator</h1>
-                    <p className="text-sm text-slate-500 mt-1">Platform metrics, user oversight, and escalation management.</p>
+                    <h1 className="text-2xl font-bold text-slate-900">Project Manager Overview</h1>
+                    <p className="text-sm text-slate-500 mt-1">Track projects, review deliverables, and approve milestones.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -44,22 +44,19 @@ export default function AdminDashboard() {
                     })}
                 </div>
 
-                <h2 className="text-lg font-semibold text-slate-900 mt-8 mb-4">Recent Escrow Transactions</h2>
+                <h2 className="text-lg font-semibold text-slate-900 mt-8 mb-4">Milestones Awaiting Approval</h2>
                 <Card>
                     <div className="divide-y divide-slate-100">
                         <div className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
                             <div>
-                                <p className="text-sm font-medium text-slate-900">$5,000 Released</p>
-                                <p className="text-xs text-slate-500">Milestone 2 - App Dev Deal</p>
+                                <p className="text-sm font-medium text-slate-900">Database Schema Design</p>
+                                <p className="text-xs text-slate-500">Project: Inventory System Migration</p>
                             </div>
-                            <span className="text-sm text-slate-500">10 mins ago</span>
-                        </div>
-                        <div className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                            <div>
-                                <p className="text-sm font-medium text-slate-900">$2,500 Held in Escrow</p>
-                                <p className="text-xs text-slate-500">Milestone 1 - Design Services</p>
+                            <div className="text-right">
+                                <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                                    Ready to Review
+                                </span>
                             </div>
-                            <span className="text-sm text-slate-500">1 hour ago</span>
                         </div>
                     </div>
                 </Card>
