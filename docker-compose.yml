@@ -1,0 +1,72 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: finx_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-finx_db}
+      POSTGRES_USER: ${POSTGRES_USER:-finx_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-finx_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - finx_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-finx_user} -d ${POSTGRES_DB:-finx_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - finx-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: finx_redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - finx_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - finx-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: finx_backend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      PORT: 8080
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-finx_db}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-finx_user}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-finx_password}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - finx-network
+
+volumes:
+  finx_postgres_data:
+    driver: local
+  finx_redis_data:
+    driver: local
+
+networks:
+  finx-network:
+    driver: bridge
