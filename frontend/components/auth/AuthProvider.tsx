@@ -81,9 +81,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         if (!user && !isPublicRoute) {
             router.push("/login");
-        } else if (user && isPublicRoute && pathname !== "/") {
-            redirectBasedOnRole(user.role);
+            return;
         }
+
+        if (user && isPublicRoute && pathname !== "/") {
+            redirectBasedOnRole(user.role);
+            return;
+        }
+
+        // Role-based protection logic
+        if (user && pathname) {
+            if (pathname.startsWith("/admin") && user.role !== "ADMIN") {
+                redirectBasedOnRole(user.role);
+            } else if (pathname.startsWith("/finance") && user.role !== "FINANCE" && user.role !== "ADMIN") {
+                redirectBasedOnRole(user.role);
+            } else if (pathname.startsWith("/project-manager") && user.role !== "PROJECT_MANAGER" && user.role !== "ADMIN") {
+                redirectBasedOnRole(user.role);
+            } else if (pathname.startsWith("/vendor") && user.role !== "VENDOR") {
+                redirectBasedOnRole(user.role);
+            } else if (pathname.startsWith("/corporate") && user.role !== "CORPORATE") {
+                redirectBasedOnRole(user.role);
+            }
+        }
+
     }, [user, isLoading, pathname, router]);
 
     return (

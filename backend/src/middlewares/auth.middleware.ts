@@ -20,3 +20,11 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): v
         return;
     }
 };
+
+export const authorizeRole = (roles: string[]) => (req: Request, res: Response, next: NextFunction): void => {
+    if (!roles.includes((req as any).user?.role)) {
+        res.status(403).json({ message: 'Forbidden' });
+        return;
+    }
+    next();
+};
