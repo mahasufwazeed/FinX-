@@ -6,6 +6,7 @@ import milestoneRoutes from './routes/milestone.routes';
 import paymentRoutes from './routes/payment.routes';
 import escrowRoutes from './routes/escrow.routes';
 import notificationRoutes from './routes/notification.routes';
+import day6Routes from './routes/day6.routes';
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.use('/api', milestoneRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/escrow', escrowRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api', day6Routes);
 
 // Health check
 app.get('/api/health', (req, res) => {
