@@ -1,32 +1,34 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/Card";
+import { Lock, Unlock, ShieldAlert, ArrowRight } from "lucide-react";
+import { Milestone } from "@/types";
+import { milestoneService } from "@/services/milestone.service";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { Activity, Lock, Unlock, ShieldAlert } from "lucide-react";
-import { useEscrowStore } from "@/store/useEscrowStore";
 
 export default function AdminDashboard() {
-    const { escrows, milestones, releaseEscrow } = useEscrowStore();
+    const [milestones, setMilestones] = useState<Milestone[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const approvedMilestones = milestones.filter(m => m.status === 'APPROVED');
-    const releasedEscrows = escrows.filter(e => e.status === 'RELEASED');
-    const heldEscrows = escrows.filter(e => e.status === 'HELD');
+    useEffect(() => {
+        milestoneService.getAllMilestones()
+            .then(setMilestones)
+            .finally(() => setIsLoading(false));
+    }, []);
 
-    const heldVolume = heldEscrows.reduce((acc, e) => acc + e.amount, 0);
+    const approvedMilestones = milestones.filter(m => m.status === 'APPROVED' || m.status === 'RELEASE_PENDING');
+    const releasedMilestones = milestones.filter(m => m.status === 'RELEASED');
 
-    const handleRelease = (milestoneId: string, amount: number) => {
-        if (confirm(`ADMIN OVERRIDE: Are you sure you want to release $${amount} to the Vendor wallet?`)) {
-            releaseEscrow(milestoneId);
-            alert('Escrow smart contract triggered. Fiat transferred successfully.');
-        }
-    };
+    const heldVolume = milestones.filter(m => !['DRAFT', 'PENDING', 'RELEASED', 'REJECTED'].includes(m.status)).reduce((acc, m) => acc + m.amount, 0);
 
     return (
         <DashboardLayout>
             <div className="space-y-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">FINX Master Console</h1>
+                    <h1 className="text-2xl font-bold text-slate-900">FINX Master Console (Escrow Operations)</h1>
                     <p className="text-sm text-slate-500 mt-1">Platform operations, liquidity volume, and Escrow Contract executions.</p>
                 </div>
 
@@ -35,7 +37,7 @@ export default function AdminDashboard() {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-slate-500">Active Escrow Holdings</p>
+                                    <p className="text-sm font-medium text-slate-500">Global Locked Volume</p>
                                     <p className="text-3xl font-bold text-slate-900 mt-2">${heldVolume.toLocaleString()}</p>
                                 </div>
                                 <div className="h-12 w-12 bg-blue-50 flex items-center justify-center rounded-full text-blue-600">
@@ -48,7 +50,7 @@ export default function AdminDashboard() {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-slate-500">Actionable PM Approvals</p>
+                                    <p className="text-sm font-medium text-slate-500">Pending Release Queues</p>
                                     <p className="text-3xl font-bold text-slate-900 mt-2">{approvedMilestones.length}</p>
                                 </div>
                                 <div className="h-12 w-12 bg-amber-50 flex items-center justify-center rounded-full text-amber-600">
@@ -61,8 +63,8 @@ export default function AdminDashboard() {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-slate-500">Completed Transactions</p>
-                                    <p className="text-3xl font-bold text-slate-900 mt-2">{releasedEscrows.length}</p>
+                                    <p className="text-sm font-medium text-slate-500">Released Txs</p>
+                                    <p className="text-3xl font-bold text-slate-900 mt-2">{releasedMilestones.length}</p>
                                 </div>
                                 <div className="h-12 w-12 bg-emerald-50 flex items-center justify-center rounded-full text-emerald-600">
                                     <Unlock size={24} />
@@ -75,35 +77,23 @@ export default function AdminDashboard() {
                 <h2 className="text-lg font-semibold text-slate-900 mt-8 mb-4">Cryptographic Escrow Pipeline (Pending Release)</h2>
                 <Card className="border-blue-300">
                     <div className="divide-y divide-slate-100">
-                        {approvedMilestones.length === 0 && (
-                            <div className="p-4 text-sm text-slate-500">No approved milestones in queue to release.</div>
+                        {isLoading && <div className="p-8 text-center text-slate-500">Syncing ledgers...</div>}
+
+                        {!isLoading && approvedMilestones.length === 0 && (
+                            <div className="p-4 text-sm text-slate-500">No approved milestones in queue for release.</div>
                         )}
+
                         {approvedMilestones.map((m) => (
                             <div key={m.id} className="p-4 flex flex-col md:flex-row items-center justify-between hover:bg-slate-50 transition-colors gap-4">
                                 <div>
-                                    <p className="text-sm font-medium text-slate-900">{m.description} <span className="ml-2 inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">PM Approved</span></p>
-                                    <p className="text-xs text-slate-500 mt-1">Escrow Vault Payload: ${m.amount.toLocaleString()}</p>
+                                    <p className="text-sm font-medium text-slate-900">{m.title} <span className="ml-2 inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">PM Approved</span></p>
+                                    <p className="text-xs text-slate-500 mt-1">Locked Vault Payload: ${m.amount.toLocaleString()} {m.currency}</p>
                                 </div>
-                                <Button onClick={() => handleRelease(m.id, m.amount)} className="gap-2 bg-slate-900 text-white hover:bg-slate-800">
-                                    <Unlock size={16} /> Execute Escrow Transfer
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
-                </Card>
-
-                <h2 className="text-lg font-semibold text-slate-900 mt-8 mb-4">Recent Settlements</h2>
-                <Card>
-                    <div className="divide-y divide-slate-100">
-                        {releasedEscrows.length === 0 && (
-                            <div className="p-4 text-sm text-slate-500">No settled transactions yet.</div>
-                        )}
-                        {releasedEscrows.map((e) => (
-                            <div key={e.id} className="p-4 flex items-center justify-between bg-slate-50">
-                                <div>
-                                    <p className="text-sm font-medium text-slate-900">Settled: ${e.amount.toLocaleString()}</p>
-                                    <p className="text-xs text-slate-500 font-mono">TX-ID: {e.id}</p>
-                                </div>
+                                <Link href={`/admin/escrow/${m.id}`}>
+                                    <Button className="gap-2 bg-slate-900 text-white hover:bg-slate-800">
+                                        <Unlock size={16} /> Review Escrow Payout <ArrowRight size={16} />
+                                    </Button>
+                                </Link>
                             </div>
                         ))}
                     </div>

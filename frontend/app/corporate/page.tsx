@@ -1,32 +1,37 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/Card";
+import { Briefcase, Clock, ShieldCheck, ArrowRight } from "lucide-react";
+import { milestoneService } from "@/services/milestone.service";
+import { Milestone } from "@/types";
+import { MilestoneStatusBadge } from "@/components/ui/MilestoneStatusBadge";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { Briefcase, Activity, CheckCircle, Clock, ShieldCheck } from "lucide-react";
-import { useEscrowStore } from "@/store/useEscrowStore";
 
 export default function CorporateDashboard() {
-    const { projects, milestones, depositEscrow } = useEscrowStore();
+    const [milestones, setMilestones] = useState<Milestone[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const handleRazorpayDeposit = (milestoneId: string, amount: number) => {
-        // Mocking Razorpay Window
-        alert(`Opening securely encrypted Razorpay gateway to deposit: $${amount}`);
-        setTimeout(() => {
-            depositEscrow(milestoneId);
-            alert('Payment Success! Escrow securely funded.');
-        }, 1000);
-    };
+    const projectId = 'proj-demo-1'; // Mocking single project for now
 
-    const pendingMilestones = milestones.filter(m => m.status === 'PENDING');
-    const fundedMilestones = milestones.filter(m => m.status === 'FUNDED');
+    useEffect(() => {
+        milestoneService.getProjectMilestones(projectId)
+            .then(setMilestones)
+            .finally(() => setIsLoading(false));
+    }, []);
+
+    const pendingCount = milestones.filter(m => m.status === 'PENDING').length;
+    const approvedCount = milestones.filter(m => m.status === 'APPROVED').length;
+    const totalValue = milestones.reduce((sum, m) => sum + m.amount, 0);
 
     return (
         <DashboardLayout>
             <div className="space-y-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Corporate Origination</h1>
-                    <p className="text-sm text-slate-500 mt-1">Manage your projects, milestones, and fund escrows via Razorpay.</p>
+                    <h1 className="text-2xl font-bold text-slate-900">Corporate Projects</h1>
+                    <p className="text-sm text-slate-500 mt-1">Track milestone deliverables, progress, and escrow states.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -34,8 +39,8 @@ export default function CorporateDashboard() {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-slate-500">Active Projects</p>
-                                    <p className="text-3xl font-bold text-slate-900 mt-2">{projects.length}</p>
+                                    <p className="text-sm font-medium text-slate-500">Milestone Value</p>
+                                    <p className="text-3xl font-bold text-slate-900 mt-2">${totalValue.toLocaleString()}</p>
                                 </div>
                                 <div className="h-12 w-12 bg-blue-50 flex items-center justify-center rounded-full text-blue-600">
                                     <Briefcase size={24} />
@@ -47,8 +52,8 @@ export default function CorporateDashboard() {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-slate-500">Awaiting Funds</p>
-                                    <p className="text-3xl font-bold text-slate-900 mt-2">{pendingMilestones.length}</p>
+                                    <p className="text-sm font-medium text-slate-500">Unfunded (Pending)</p>
+                                    <p className="text-3xl font-bold text-slate-900 mt-2">{pendingCount}</p>
                                 </div>
                                 <div className="h-12 w-12 bg-amber-50 flex items-center justify-center rounded-full text-amber-600">
                                     <Clock size={24} />
@@ -60,8 +65,8 @@ export default function CorporateDashboard() {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-slate-500">Funded in Escrow</p>
-                                    <p className="text-3xl font-bold text-slate-900 mt-2">{fundedMilestones.length}</p>
+                                    <p className="text-sm font-medium text-slate-500">PM Approved</p>
+                                    <p className="text-3xl font-bold text-slate-900 mt-2">{approvedCount}</p>
                                 </div>
                                 <div className="h-12 w-12 bg-green-50 flex items-center justify-center rounded-full text-green-600">
                                     <ShieldCheck size={24} />
@@ -71,41 +76,33 @@ export default function CorporateDashboard() {
                     </Card>
                 </div>
 
-                <h2 className="text-lg font-semibold text-slate-900 mt-8 mb-4">Milestones Awaiting Escrow Deposit</h2>
-                <Card className="border-amber-200">
-                    <div className="divide-y divide-slate-100">
-                        {pendingMilestones.length === 0 && (
-                            <div className="p-4 text-sm text-slate-500">No milestones awaiting funds.</div>
-                        )}
-                        {pendingMilestones.map(milestone => (
-                            <div key={milestone.id} className="p-4 flex items-center justify-between hover:bg-slate-50">
-                                <div>
-                                    <p className="text-sm font-medium text-slate-900">{milestone.description}</p>
-                                    <p className="text-xs text-slate-500">Amount required: ${milestone.amount.toLocaleString()}</p>
-                                </div>
-                                <Button onClick={() => handleRazorpayDeposit(milestone.id, milestone.amount)} size="sm" className="gap-2 bg-slate-900 text-white hover:bg-slate-800">
-                                    Deposit via Razorpay
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
-                </Card>
+                <div className="flex justify-between items-center mt-8 mb-4">
+                    <h2 className="text-lg font-semibold text-slate-900">Project Milestones: Alpha Development</h2>
+                </div>
 
-                <h2 className="text-lg font-semibold text-slate-900 mt-8 mb-4">Actively Funded Milestones</h2>
                 <Card>
                     <div className="divide-y divide-slate-100">
-                        {fundedMilestones.length === 0 && (
-                            <div className="p-4 text-sm text-slate-500">No active milestones in escrow.</div>
+                        {isLoading && <div className="p-8 text-center text-slate-500">Loading milestones from API...</div>}
+
+                        {!isLoading && milestones.length === 0 && (
+                            <div className="p-4 text-sm text-slate-500">No milestones found.</div>
                         )}
-                        {fundedMilestones.map(milestone => (
-                            <div key={milestone.id} className="p-4 flex items-center justify-between hover:bg-slate-50">
-                                <div>
-                                    <p className="text-sm font-medium text-slate-900">{milestone.description}</p>
-                                    <p className="text-xs text-slate-500">Locked Amount: ${milestone.amount.toLocaleString()}</p>
+
+                        {milestones.map(m => (
+                            <div key={m.id} className="p-6 flex flex-col md:flex-row items-center justify-between hover:bg-slate-50 gap-4">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-3">
+                                        <h3 className="font-semibold text-slate-900">{m.title}</h3>
+                                        <MilestoneStatusBadge status={m.status} />
+                                    </div>
+                                    <p className="text-sm text-slate-500 mt-1">{m.description}</p>
+                                    <p className="text-xs font-medium text-slate-700 mt-2">Value: ${m.amount.toLocaleString()} {m.currency}</p>
                                 </div>
-                                <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
-                                    Escrow Funded - Vendor Working
-                                </span>
+                                <div className="flex shrink-0">
+                                    <Link href={`/corporate/projects/${projectId}/milestones/${m.id}`}>
+                                        <Button variant="outline" className="gap-2">View Details <ArrowRight size={16} /></Button>
+                                    </Link>
+                                </div>
                             </div>
                         ))}
                     </div>

@@ -24,27 +24,45 @@ export interface ApiError {
   details?: unknown;
 }
 
-// Future contracts
+export type MilestoneStatus =
+  | "PENDING"
+  | "IN_PROGRESS"
+  | "SUBMITTED"
+  | "UNDER_REVIEW"
+  | "APPROVED"
+  | "REJECTED"
+  | "RELEASE_PENDING"
+  | "RELEASED";
+
 export interface Project {
   id: string;
   title: string;
+  description?: string;
   status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'DISPUTED';
   amount: number;
-}
-
-export interface Milestone {
-  id: string;
-  projectId: string;
-  description: string;
-  amount: number;
-  status: 'PENDING' | 'FUNDED' | 'REVIEW' | 'APPROVED' | 'RELEASED' | 'DISPUTED';
 }
 
 export interface Deliverable {
   id: string;
   milestoneId: string;
-  details: string;
-  status: 'SUBMITTED' | 'APPROVED' | 'REJECTED';
+  fileName: string;
+  fileUrl: string;
+  uploadedBy: string;
+  uploadedAt: string;
+}
+
+export interface Milestone {
+  id: string;
+  projectId: string;
+  title: string;
+  description: string;
+  amount: number;
+  currency: string;
+  dueDate?: string;
+  status: MilestoneStatus;
+  deliverables?: Deliverable[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Payment {

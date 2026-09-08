@@ -21,5 +21,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "db:push": "npx prisma db push"
-  }
+  },
+  "name": "finx-backend",
+  "version": "1.0.0"
 }
