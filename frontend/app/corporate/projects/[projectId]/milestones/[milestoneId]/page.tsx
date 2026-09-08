@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/Card";
 import { MilestoneStatusBadge } from "@/components/ui/MilestoneStatusBadge";
+import { EscrowTimeline } from "@/components/escrow/EscrowTimeline";
 import { Milestone } from "@/types";
 import { milestoneService } from "@/services/milestone.service";
 import Link from "next/link";
@@ -63,33 +64,44 @@ export default function CorporateMilestoneDetails() {
                     </Card>
                 </div>
 
-                <h2 className="text-lg font-semibold text-slate-900 mt-8 mb-4">Vendor Deliverables</h2>
-                <Card>
-                    <div className="divide-y divide-slate-100">
-                        {(!milestone.deliverables || milestone.deliverables.length === 0) && (
-                            <div className="p-6 text-center text-slate-500">
-                                <FileCheck className="mx-auto h-12 w-12 text-slate-300 mb-3" />
-                                <p>No deliverables have been submitted by the vendor yet.</p>
-                            </div>
-                        )}
-                        {milestone.deliverables?.map(d => (
-                            <div key={d.id} className="p-6 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded">
-                                        <FileCheck size={20} />
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+                    <div className="lg:col-span-2">
+                        <h2 className="text-lg font-semibold text-slate-900 mb-4">Vendor Deliverables</h2>
+                        <Card>
+                            <div className="divide-y divide-slate-100">
+                                {(!milestone.deliverables || milestone.deliverables.length === 0) && (
+                                    <div className="p-6 text-center text-slate-500">
+                                        <FileCheck className="mx-auto h-12 w-12 text-slate-300 mb-3" />
+                                        <p>No deliverables have been submitted by the vendor yet.</p>
                                     </div>
-                                    <div>
-                                        <p className="font-semibold text-slate-900">{d.fileName}</p>
-                                        <p className="text-xs text-slate-500">Uploaded {new Date(d.uploadedAt).toLocaleString()}</p>
+                                )}
+                                {milestone.deliverables?.map(d => (
+                                    <div key={d.id} className="p-6 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-indigo-50 text-indigo-600 rounded">
+                                                <FileCheck size={20} />
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold text-slate-900">{d.fileName}</p>
+                                                <p className="text-xs text-slate-500">Uploaded {new Date(d.uploadedAt).toLocaleString()}</p>
+                                            </div>
+                                        </div>
+                                        <a href={d.fileUrl} target="_blank" className="text-sm font-medium text-blue-600 hover:underline">
+                                            Download / View
+                                        </a>
                                     </div>
-                                </div>
-                                <a href={d.fileUrl} target="_blank" className="text-sm font-medium text-blue-600 hover:underline">
-                                    Download / View
-                                </a>
+                                ))}
                             </div>
-                        ))}
+                        </Card>
                     </div>
-                </Card>
+                    <div className="lg:col-span-1">
+                        <Card>
+                            <CardContent className="p-6">
+                                <EscrowTimeline currentStatus={milestone.status} />
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
             </div>
         </DashboardLayout>
     );

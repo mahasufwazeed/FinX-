@@ -1,4 +1,4 @@
-import api from '@/lib/api';
+import { api } from '@/lib/api';
 import { Milestone, Deliverable } from '@/types';
 
 export const milestoneService = {
@@ -43,8 +43,13 @@ export const milestoneService = {
     },
 
     // Reject milestone (PM)
-    rejectMilestone: async (id: string, reason: string): Promise<Milestone> => {
+    rejectMilestone: async (id: string, reason: string) => {
         const { data } = await api.post(`/milestones/${id}/reject`, { reason });
+        return data;
+    },
+
+    requestChanges: async (id: string, comment: string) => {
+        const { data } = await api.post(`/milestones/${id}/request-changes`, { comment });
         return data;
     },
 

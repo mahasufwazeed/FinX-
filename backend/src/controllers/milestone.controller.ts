@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getDb, saveDb } from '../db';
+import { getDb, saveDb, createNotification } from '../db';
 import crypto from 'crypto';
 
 // Get all milestones globally (for admin/finance/vendor aggregate UI)
@@ -70,8 +70,25 @@ export const getMilestone = async (req: Request, res: Response): Promise<void> =
             return;
         }
         res.json(milestone);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error retrieving milestone' });
+    }
+};
+
+export const requestChanges = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { comment } = req.body;
+        const db = getDb();
+        const milestoneIndex = db.milestones.findIndex((m: any) => m.id === String(req.params.id));
+
+        if (milestoneIndex > -1) {
+            db.milestones[milestoneIndex].status = 'IN_PROGRESS'; // sends it back
+            saveDb(db);
+            createNotification(null, 'Changes Requested', 'The Project Manager requested revisions on your deliverable.', `/vendor/projects/${db.milestones[milestoneIndex].projectId}/milestones/${req.params.id}`);
+        }
+        res.json({ success: true });
     } catch (err) {
-        res.status(500).json({ message: 'Error fetching milestone' });
+        res.status(500).json({ message: 'Failed' });
     }
 };
 
@@ -90,26 +107,26 @@ const updateMilestoneStatus = (id: string, newStatus: string) => {
 }
 
 export const startMilestone = async (req: Request, res: Response): Promise<void> => {
-    const updated = updateMilestoneStatus(req.params.id, 'IN_PROGRESS');
+    const updated = updateMilestoneStatus(String(req.params.id), 'IN_PROGRESS');
     if (!updated) res.status(404).json({ message: 'Not found' });
     else res.json(updated);
 };
 
 export const submitMilestone = async (req: Request, res: Response): Promise<void> => {
-    const updated = updateMilestoneStatus(req.params.id, 'UNDER_REVIEW');
+    const updated = updateMilestoneStatus(String(req.params.id), 'UNDER_REVIEW');
     if (!updated) res.status(404).json({ message: 'Not found' });
     else res.json(updated);
 };
 
 export const approveMilestone = async (req: Request, res: Response): Promise<void> => {
-    const updated = updateMilestoneStatus(req.params.id, 'APPROVED');
+    const updated = updateMilestoneStatus(String(req.params.id), 'APPROVED');
     // Note: Once approved, the admin triggers RELEASE_PENDING or RELEASED, but for now it's just APPROVED.
     if (!updated) res.status(404).json({ message: 'Not found' });
     else res.json(updated);
 };
 
 export const rejectMilestone = async (req: Request, res: Response): Promise<void> => {
-    const updated = updateMilestoneStatus(req.params.id, 'REJECTED');
+    const updated = updateMilestoneStatus(String(req.params.id), 'REJECTED');
     if (!updated) res.status(404).json({ message: 'Not found' });
     else res.json(updated);
 };

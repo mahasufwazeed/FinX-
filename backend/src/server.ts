@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
 import milestoneRoutes from './routes/milestone.routes';
 import paymentRoutes from './routes/payment.routes';
+import escrowRoutes from './routes/escrow.routes';
+import notificationRoutes from './routes/notification.routes';
 
 dotenv.config();
 
@@ -17,6 +19,8 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api', milestoneRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/escrow', escrowRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -8,6 +8,7 @@ import {
     Users, Briefcase, CreditCard, ShieldCheck,
     Settings, LogOut, Menu, Bell, X, FileText, FileSpreadsheet, Activity, CheckSquare
 } from "lucide-react";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     const { user, logout } = useAuth();
@@ -109,8 +110,9 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                 </nav>
 
                 <div className="p-4 border-t border-slate-200">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold uppercase">
+                    <div className="flex items-center gap-4">
+                        <NotificationBell />
+                        <div className="w-8 h-8 rounded-full bg-slate-200 border-2 border-white shadow-sm flex items-center justify-center text-slate-600 font-bold text-sm">
                             {user?.fullName?.charAt(0) || "U"}
                         </div>
                         <div className="flex-1 min-w-0">

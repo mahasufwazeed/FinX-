@@ -7,7 +7,7 @@ import {
     uploadDeliverable,
     submitMilestone,
     approveMilestone,
-    rejectMilestone,
+    rejectMilestone, requestChanges,
     getAllMilestones
 } from '../controllers/milestone.controller';
 
@@ -23,6 +23,7 @@ router.post('/milestones/:id/start', startMilestone);
 router.post('/milestones/:id/submit', submitMilestone);
 router.post('/milestones/:id/approve', approveMilestone);
 router.post('/milestones/:id/reject', rejectMilestone);
+router.post('/milestones/:id/request-changes', requestChanges);
 router.post('/milestones/:id/deliverables', uploadDeliverable); // uses generic json payload
 
 export default router;
