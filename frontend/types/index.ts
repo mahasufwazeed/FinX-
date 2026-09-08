@@ -37,7 +37,7 @@ export interface Milestone {
   dealId: string;
   description: string;
   amount: number;
-  status: 'PENDING' | 'FUNDED' | 'APPROVED' | 'RELEASED';
+  status: 'PENDING' | 'FUNDED' | 'REVIEW' | 'APPROVED' | 'RELEASED' | 'DISPUTED';
 }
 
 export interface Payment {
