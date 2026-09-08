@@ -1,0 +1,152 @@
+package com.finx.deal.entity;
+
+import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.Objects;
+import java.util.UUID;
+
+@Entity
+@Table(name = "deals", indexes = {
+        @Index(name = "idx_deals_buyer_id", columnList = "buyer_id"),
+        @Index(name = "idx_deals_seller_id", columnList = "seller_id"),
+        @Index(name = "idx_deals_status", columnList = "status"),
+        @Index(name = "idx_deals_created_at", columnList = "created_at")
+})
+public class Deal {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id", updatable = false, nullable = false)
+    private UUID id;
+
+    @Column(name = "title", nullable = false)
+    private String title;
+
+    @Column(name = "description")
+    private String description;
+
+    @Column(name = "buyer_id", nullable = false)
+    private UUID buyerId;
+
+    @Column(name = "seller_id", nullable = false)
+    private UUID sellerId;
+
+    @Column(name = "total_amount", nullable = false, precision = 15, scale = 2)
+    private BigDecimal totalAmount;
+
+    @Column(name = "currency", nullable = false, length = 10)
+    private String currency = "USD";
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 50)
+    private DealStatus status = DealStatus.DRAFT;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
+    public Deal() {
+    }
+
+    public Deal(String title, String description, UUID buyerId, UUID sellerId, BigDecimal totalAmount, String currency, DealStatus status) {
+        this.title = title;
+        this.description = description;
+        this.buyerId = buyerId;
+        this.sellerId = sellerId;
+        this.totalAmount = totalAmount;
+        this.currency = (currency != null && !currency.isBlank()) ? currency.toUpperCase() : "USD";
+        this.status = (status != null) ? status : DealStatus.DRAFT;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public UUID getBuyerId() {
+        return buyerId;
+    }
+
+    public void setBuyerId(UUID buyerId) {
+        this.buyerId = buyerId;
+    }
+
+    public UUID getSellerId() {
+        return sellerId;
+    }
+
+    public void setSellerId(UUID sellerId) {
+        this.sellerId = sellerId;
+    }
+
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public DealStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(DealStatus status) {
+        this.status = status;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Deal deal)) return false;
+        return Objects.equals(id, deal.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
+    }
+}

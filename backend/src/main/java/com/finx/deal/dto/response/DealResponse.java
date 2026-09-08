@@ -1,0 +1,135 @@
+package com.finx.deal.dto.response;
+
+import com.finx.deal.entity.Deal;
+import com.finx.deal.entity.DealStatus;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
+
+public class DealResponse {
+
+    private UUID id;
+    private String title;
+    private String description;
+    private UUID buyerId;
+    private UUID sellerId;
+    private BigDecimal totalAmount;
+    private String currency;
+    private DealStatus status;
+    private Instant createdAt;
+    private Instant updatedAt;
+
+    public DealResponse() {
+    }
+
+    public DealResponse(UUID id, String title, String description, UUID buyerId, UUID sellerId,
+                        BigDecimal totalAmount, String currency, DealStatus status,
+                        Instant createdAt, Instant updatedAt) {
+        this.id = id;
+        this.title = title;
+        this.description = description;
+        this.buyerId = buyerId;
+        this.sellerId = sellerId;
+        this.totalAmount = totalAmount;
+        this.currency = currency;
+        this.status = status;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+
+    public static DealResponse fromEntity(Deal deal) {
+        return new DealResponse(
+                deal.getId(),
+                deal.getTitle(),
+                deal.getDescription(),
+                deal.getBuyerId(),
+                deal.getSellerId(),
+                deal.getTotalAmount(),
+                deal.getCurrency(),
+                deal.getStatus(),
+                deal.getCreatedAt(),
+                deal.getUpdatedAt()
+        );
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public UUID getBuyerId() {
+        return buyerId;
+    }
+
+    public void setBuyerId(UUID buyerId) {
+        this.buyerId = buyerId;
+    }
+
+    public UUID getSellerId() {
+        return sellerId;
+    }
+
+    public void setSellerId(UUID sellerId) {
+        this.sellerId = sellerId;
+    }
+
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public DealStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(DealStatus status) {
+        this.status = status;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+}

@@ -10,9 +10,9 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:dev}
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/finx_db}
-    username: ${SPRING_DATASOURCE_USERNAME:finx_user}
-    password: ${SPRING_DATASOURCE_PASSWORD:finx_password}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${SUPABASE_DB_HOST:localhost}:${SUPABASE_DB_PORT:5432}/${SUPABASE_DB_NAME:finx_db}}
+    username: ${SPRING_DATASOURCE_USERNAME:${SUPABASE_DB_USERNAME:finx_user}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${SUPABASE_DB_PASSWORD:finx_password}}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
