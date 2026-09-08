@@ -23,6 +23,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
 
     const getNavLinks = () => {
         const baseLinks = [
+            { name: "Compliance (KYC)", href: "/kyc", icon: ShieldCheck },
             { name: "Settings", href: `/${user?.role?.toLowerCase().replace('_', '-')}/settings`, icon: Settings },
         ];
 
@@ -96,8 +97,8 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                                 key={link.name}
                                 href={link.href}
                                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive
-                                        ? "bg-blue-50 text-blue-700"
-                                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                                    ? "bg-blue-50 text-blue-700"
+                                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                                     }`}
                             >
                                 <Icon size={18} />
@@ -154,8 +155,8 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                                 href={link.href}
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive
-                                        ? "bg-blue-50 text-blue-700"
-                                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                                    ? "bg-blue-50 text-blue-700"
+                                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                                     }`}
                             >
                                 <Icon size={18} />
