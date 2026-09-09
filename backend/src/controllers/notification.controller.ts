@@ -26,3 +26,16 @@ export const markAsRead = async (req: Request, res: Response): Promise<void> => 
         res.status(500).json({ message: 'Failed' });
     }
 };
+
+export const markAllAsRead = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const userId = (req as any).user?.id;
+        await prisma.notification.updateMany({
+            where: { userId },
+            data: { isRead: true }
+        });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ message: 'Failed' });
+    }
+};
