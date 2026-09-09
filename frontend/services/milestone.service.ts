@@ -1,61 +1,48 @@
-import { api } from '@/lib/api';
 import { Milestone, Deliverable } from '@/types';
 
+// The backend Milestone API is scheduled for future implementation and currently unavailable.
+// We provide a clean service abstraction that strictly enforces this state.
+
+export const MILESTONE_API_DISABLED_MSG = "Milestone APIs are not yet implemented on the backend.";
+
 export const milestoneService = {
-    // Get all milestones for a project
-    getProjectMilestones: async (projectId: string): Promise<Milestone[]> => {
-        const { data } = await api.get(`/projects/${projectId}/milestones`);
-        return data;
+    getProjectMilestones: async (dealId: string): Promise<Milestone[]> => {
+        return Promise.reject(new Error(MILESTONE_API_DISABLED_MSG));
     },
 
-    // Get a single milestone
     getMilestone: async (id: string): Promise<Milestone> => {
-        const { data } = await api.get(`/milestones/${id}`);
-        return data;
+        return Promise.reject(new Error(MILESTONE_API_DISABLED_MSG));
     },
 
-    // Start a milestone (Vendor)
-    startMilestone: async (id: string): Promise<Milestone> => {
-        const { data } = await api.post(`/milestones/${id}/start`);
-        return data;
-    },
-
-    // Submit deliverables (Vendor)
-    uploadDeliverable: async (id: string, file: File): Promise<Deliverable> => {
-        const formData = new FormData();
-        formData.append('file', file);
-        const { data } = await api.post(`/milestones/${id}/deliverables`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        return data;
-    },
-
-    // Submit milestone for review (Vendor)
-    submitMilestone: async (id: string): Promise<Milestone> => {
-        const { data } = await api.post(`/milestones/${id}/submit`);
-        return data;
-    },
-
-    // Approve milestone (PM)
-    approveMilestone: async (id: string): Promise<Milestone> => {
-        const { data } = await api.post(`/milestones/${id}/approve`);
-        return data;
-    },
-
-    // Reject milestone (PM)
-    rejectMilestone: async (id: string, reason: string) => {
-        const { data } = await api.post(`/milestones/${id}/reject`, { reason });
-        return data;
-    },
-
-    requestChanges: async (id: string, comment: string) => {
-        const { data } = await api.post(`/milestones/${id}/request-changes`, { comment });
-        return data;
-    },
-
-    // Get endpoints across all projects (Dashboard aggregate endpoints mapped back to backend mock for simplicity)
     getAllMilestones: async (): Promise<Milestone[]> => {
-        const { data } = await api.get('/milestones');
-        return data;
+        return Promise.reject(new Error(MILESTONE_API_DISABLED_MSG));
     },
+
+    createMilestone: async (dealId: string, payload: any): Promise<Milestone> => {
+        return Promise.reject(new Error(MILESTONE_API_DISABLED_MSG));
+    },
+
+    startMilestone: async (id: string): Promise<Milestone> => {
+        return Promise.reject(new Error(MILESTONE_API_DISABLED_MSG));
+    },
+
+    uploadDeliverable: async (id: string, file: File): Promise<Deliverable> => {
+        return Promise.reject(new Error(MILESTONE_API_DISABLED_MSG));
+    },
+
+    submitMilestone: async (id: string): Promise<Milestone> => {
+        return Promise.reject(new Error(MILESTONE_API_DISABLED_MSG));
+    },
+
+    approveMilestone: async (id: string): Promise<Milestone> => {
+        return Promise.reject(new Error(MILESTONE_API_DISABLED_MSG));
+    },
+
+    rejectMilestone: async (id: string, reason: string): Promise<Milestone> => {
+        return Promise.reject(new Error(MILESTONE_API_DISABLED_MSG));
+    },
+
+    requestChanges: async (id: string, comment: string): Promise<Milestone> => {
+        return Promise.reject(new Error(MILESTONE_API_DISABLED_MSG));
+    }
 };

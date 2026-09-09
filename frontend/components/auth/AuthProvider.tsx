@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (role === "ADMIN") router.push("/admin");
         else if (role === "FINANCE") router.push("/finance");
         else if (role === "PROJECT_MANAGER") router.push("/project-manager");
-        else if (role === "VENDOR") router.push("/vendor");
+        else if (role === "VENDOR" || role === "SELLER") router.push("/vendor");
         else router.push("/corporate");
     };
 
@@ -97,9 +97,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 redirectBasedOnRole(user.role);
             } else if (pathname.startsWith("/project-manager") && user.role !== "PROJECT_MANAGER" && user.role !== "ADMIN") {
                 redirectBasedOnRole(user.role);
-            } else if (pathname.startsWith("/vendor") && user.role !== "VENDOR") {
+            } else if (pathname.startsWith("/vendor") && user.role !== "VENDOR" && user.role !== "SELLER") {
                 redirectBasedOnRole(user.role);
-            } else if (pathname.startsWith("/corporate") && user.role !== "CORPORATE") {
+            } else if (pathname.startsWith("/corporate") && user.role !== "CORPORATE" && user.role !== "BUYER") {
                 redirectBasedOnRole(user.role);
             }
         }

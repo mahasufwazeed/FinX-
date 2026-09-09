@@ -1,4 +1,4 @@
-export type Role = "CORPORATE" | "VENDOR" | "PROJECT_MANAGER" | "ADMIN" | "FINANCE";
+export type Role = "CORPORATE" | "VENDOR" | "PROJECT_MANAGER" | "ADMIN" | "FINANCE" | "BUYER" | "SELLER";
 
 export interface User {
   id: string;
@@ -11,6 +11,12 @@ export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
   user: User;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
 }
 
 export interface RefreshTokenResponse {
@@ -42,6 +48,33 @@ export interface Project {
   amount: number;
 }
 
+export type DealStatus = 'DRAFT' | 'PENDING_ACCEPTANCE' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'DISPUTED';
+
+export interface Deal {
+  id: string;
+  title: string;
+  description: string;
+  buyerId: string;
+  sellerId: string;
+  totalAmount: number;
+  currency: string;
+  status: DealStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DealResponse {
+  id: string;
+  title: string;
+  description: string;
+  buyerId: string;
+  sellerId: string;
+  totalAmount: number;
+  currency: string;
+  status: DealStatus;
+  createdAt: string;
+  updatedAt: string;
+}
 export interface Deliverable {
   id: string;
   milestoneId: string;

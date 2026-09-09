@@ -25,7 +25,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
     const getNavLinks = () => {
         const baseLinks = [
             { name: "Compliance (KYC)", href: "/kyc", icon: ShieldCheck },
-            { name: "Settings", href: `/${user?.role?.toLowerCase().replace('_', '-')}/settings`, icon: Settings },
+            { name: "Settings", href: `/${(user?.role === 'BUYER' ? 'corporate' : user?.role === 'SELLER' ? 'vendor' : user?.role?.toLowerCase().replace('_', '-') || 'corporate')}/settings`, icon: Settings },
         ];
 
         switch (user?.role) {
@@ -58,6 +58,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                     ...baseLinks
                 ];
             case "VENDOR":
+            case "SELLER":
                 return [
                     { name: "Overview", href: "/vendor", icon: Activity },
                     { name: "My Projects", href: "/vendor/projects", icon: Briefcase },
@@ -67,6 +68,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                     ...baseLinks
                 ];
             case "CORPORATE":
+            case "BUYER":
             default:
                 return [
                     { name: "Overview", href: "/corporate", icon: Activity },
