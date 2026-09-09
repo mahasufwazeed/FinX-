@@ -9,8 +9,7 @@ services:
     name: finx-backend
     env: node
     plan: free
-    buildCommand: npm install && npm run build --workspace=backend
-    preDeployCommand: npm run db:push --workspace=backend
+    buildCommand: npm install && npm run build --workspace=backend && npm run db:push --workspace=backend
     startCommand: npm run start --workspace=backend
     envVars:
       - key: DATABASE_URL
