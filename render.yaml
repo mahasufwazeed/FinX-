@@ -4,7 +4,7 @@ services:
     name: finx-backend
     env: node
     plan: free
-    buildCommand: rm -rf node_modules package-lock.json && npm install && npm run build --workspace=backend && npm run db:push --workspace=backend
+    buildCommand: rm -rf node_modules package-lock.json && npm install && npm run build --workspace=backend
     startCommand: npm run start --workspace=backend
     envVars:
       - key: DATABASE_URL
