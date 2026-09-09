@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { getDb, saveDb } from '../db';
+import { prisma } from '../db';
 import crypto from 'crypto';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_finx_key_2026';
@@ -9,24 +9,22 @@ const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_finx_key_2026';
 export const register = async (req: Request, res: Response): Promise<void> => {
     try {
         const { email, password, fullName, role } = req.body;
-        const db = getDb();
 
-        if (db.users.find((u: any) => u.email === email)) {
+        const existingUser = await prisma.user.findUnique({ where: { email } });
+        if (existingUser) {
             res.status(409).json({ message: 'Email is already registered' });
             return;
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = {
-            id: crypto.randomUUID(),
-            email,
-            fullName,
-            password: hashedPassword,
-            role: role || 'CORPORATE',
-        };
-
-        db.users.push(user);
-        saveDb(db);
+        const user = await prisma.user.create({
+            data: {
+                email,
+                fullName,
+                password: hashedPassword,
+                role: role || 'CORPORATE',
+            }
+        });
 
         const accessToken = jwt.sign(
             { id: user.id, email: user.email, role: user.role, fullName: user.fullName },
@@ -47,9 +45,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 export const login = async (req: Request, res: Response): Promise<void> => {
     try {
         const { email, password } = req.body;
-        const db = getDb();
 
-        const user = db.users.find((u: any) => u.email === email);
+        const user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
             res.status(401).json({ message: 'Invalid credentials' });
             return;
@@ -80,9 +77,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 export const getMe = async (req: Request, res: Response): Promise<void> => {
     try {
         const userId = (req as any).user?.id;
-        const db = getDb();
 
-        const user = db.users.find((u: any) => u.id === userId);
+        const user = await prisma.user.findUnique({ where: { id: userId } });
         if (!user) {
             res.status(404).json({ message: 'User not found' });
             return;
