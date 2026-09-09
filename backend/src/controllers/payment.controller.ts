@@ -75,7 +75,7 @@ export const verifyPayment = async (req: Request, res: Response): Promise<void> 
 
 export const getPaymentById = async (req: Request, res: Response): Promise<void> => {
     try {
-        const payment = await prisma.payment.findUnique({ where: { id: req.params.paymentId } });
+        const payment = await prisma.payment.findUnique({ where: { id: String(req.params.paymentId) } });
         if (!payment) {
             res.status(404).json({ message: 'Payment not found' });
             return;

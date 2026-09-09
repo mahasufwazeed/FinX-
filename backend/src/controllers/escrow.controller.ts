@@ -4,7 +4,7 @@ import crypto from 'crypto';
 
 export const releaseEscrow = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { milestoneId } = req.params;
+        const milestoneId = String(req.params.milestoneId);
         const { comment } = req.body;
 
         const milestone = await prisma.milestone.findUnique({ where: { id: milestoneId } });

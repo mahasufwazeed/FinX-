@@ -13,7 +13,7 @@ export const getAllMilestones = async (req: Request, res: Response): Promise<voi
 
 export const getProjectMilestones = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { projectId } = req.params;
+        const projectId = String(req.params.projectId);
         let milestones = await prisma.milestone.findMany({
             where: { projectId },
             include: { deliverables: true }
@@ -26,7 +26,7 @@ export const getProjectMilestones = async (req: Request, res: Response): Promise
 
 export const getMilestone = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { id } = req.params;
+        const id = String(req.params.id);
         const milestone = await prisma.milestone.findUnique({
             where: { id },
             include: { deliverables: true }
@@ -44,7 +44,7 @@ export const getMilestone = async (req: Request, res: Response): Promise<void> =
 
 export const requestChanges = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { id } = req.params;
+        const id = String(req.params.id);
         const milestone = await prisma.milestone.update({
             where: { id },
             data: { status: 'IN_PROGRESS' }
@@ -95,7 +95,7 @@ export const rejectMilestone = async (req: Request, res: Response): Promise<void
 
 export const uploadDeliverable = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { id } = req.params;
+        const id = String(req.params.id);
         const milestone = await prisma.milestone.findUnique({ where: { id } });
 
         if (!milestone) {
