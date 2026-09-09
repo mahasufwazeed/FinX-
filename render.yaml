@@ -1,8 +1,3 @@
-databases:
-  - name: finx-db
-    databaseName: finx
-    user: finx
-    plan: free
 
 services:
   - type: web
@@ -13,9 +8,7 @@ services:
     startCommand: npm run start --workspace=backend
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: finx-db
-          property: connectionString
+        sync: false
       - key: PORT
         value: "5000"
       - key: JWT_SECRET
