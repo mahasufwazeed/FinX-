@@ -1,7 +1,10 @@
 import axios from "axios";
 import { AuthResponse } from "@/types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+let API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+if (API_URL && !API_URL.endsWith('/api') && !API_URL.includes('localhost')) {
+    API_URL = `${API_URL}/api`;
+}
 
 export const api = axios.create({
     baseURL: API_URL,
