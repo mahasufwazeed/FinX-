@@ -17,7 +17,7 @@ services:
           name: finx-db
           property: connectionString
       - key: PORT
-        value: 5000
+        value: "5000"
       - key: JWT_SECRET
         generateValue: true
 
@@ -34,4 +34,4 @@ services:
           name: finx-backend
           envVarKey: RENDER_EXTERNAL_URL
       - key: PORT
-        value: 3000
+        value: "3000"
