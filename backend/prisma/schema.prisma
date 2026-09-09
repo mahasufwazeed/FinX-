@@ -15,4 +15,93 @@ model User {
   role      String   // CORPORATE, VENDOR, PROJECT_MANAGER, ADMIN, FINANCE
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  notifications Notification[]
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  
+  milestones  Milestone[]
+  payments    Payment[]
+}
+
+model Milestone {
+  id          String   @id @default(uuid())
+  projectId   String
+  title       String
+  description String?
+  amount      Float
+  currency    String   @default("USD")
+  status      String   // PENDING, IN_PROGRESS, SUBMITTED, UNDER_REVIEW, APPROVED, REJECTED, RELEASE_PENDING, RELEASED, DISPUTED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  project     Project  @relation(fields: [projectId], references: [id])
+  
+  deliverables Deliverable[]
+  payments     Payment[]
+  escrowTxs    EscrowTransaction[]
+}
+
+model Deliverable {
+  id          String   @id @default(uuid())
+  milestoneId String
+  fileName    String
+  fileUrl     String
+  uploadedBy  String
+  uploadedAt  DateTime @default(now())
+  
+  milestone   Milestone @relation(fields: [milestoneId], references: [id])
+}
+
+model Payment {
+  id                String   @id @default(uuid())
+  projectId         String
+  milestoneId       String
+  amount            Float
+  currency          String   @default("INR")
+  status            String
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  project           Project   @relation(fields: [projectId], references: [id])
+  milestone         Milestone @relation(fields: [milestoneId], references: [id])
+}
+
+model EscrowTransaction {
+  id          String   @id @default(uuid())
+  milestoneId String
+  amount      Float
+  status      String
+  comment     String?
+  releasedAt  DateTime?
+  createdAt   DateTime @default(now())
+  
+  milestone   Milestone @relation(fields: [milestoneId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String?
+  title     String
+  message   String
+  route     String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  user      User?    @relation(fields: [userId], references: [id])
+}
+
+model Dispute {
+  id          String   @id @default(uuid())
+  milestoneId String
+  reason      String
+  status      String   @default("OPEN")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
