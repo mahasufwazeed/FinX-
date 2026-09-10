@@ -19,12 +19,15 @@ import com.finx.payment.entity.Payment;
 import com.finx.payment.entity.PaymentStatus;
 import com.finx.payment.repository.PaymentRepository;
 import com.finx.security.service.UserPrincipal;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -231,6 +234,106 @@ public class PaymentService {
         return paymentRepository.findByBuyerIdOrderByCreatedAtDesc(buyerId).stream()
                 .map(PaymentResponse::fromEntity)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public Map<String, Object> processWebhook(String rawPayload, String signature) {
+        if (!razorpayService.verifyWebhookSignature(rawPayload, signature)) {
+            log.warn("Webhook rejected: Invalid cryptographic signature");
+            throw new BadRequestException("Invalid webhook signature");
+        }
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(rawPayload);
+            String event = root.path("event").asText("");
+            log.info("Received verified Razorpay webhook event: {}", event);
+
+            JsonNode paymentNode = root.path("payload").path("payment").path("entity");
+            String orderId = paymentNode.path("order_id").asText(null);
+            String paymentId = paymentNode.path("id").asText(null);
+            String status = paymentNode.path("status").asText("");
+
+            if (orderId == null || orderId.isBlank()) {
+                log.info("Webhook event {} does not contain order_id, acknowledging receipt", event);
+                return Map.of("status", "acknowledged", "event", event);
+            }
+
+            Optional<Payment> paymentOpt = paymentRepository.findByProviderOrderId(orderId);
+            if (paymentOpt.isEmpty()) {
+                log.warn("Webhook received for unknown orderId: {}", orderId);
+                return Map.of("status", "order_not_found", "orderId", orderId);
+            }
+
+            Payment payment = paymentOpt.get();
+
+            // Idempotency: If payment already completed/success, do not fund or process again!
+            if (payment.getStatus() == PaymentStatus.SUCCESS) {
+                log.info("Webhook duplicate ignored: payment {} already marked SUCCESS", payment.getId());
+                return Map.of("status", "already_processed", "paymentId", payment.getId());
+            }
+
+            if ("payment.captured".equals(event) || "order.paid".equals(event) || "captured".equalsIgnoreCase(status)) {
+                payment.setProviderPaymentId(paymentId != null ? paymentId : "pay_webhook_" + orderId);
+                payment.setStatus(PaymentStatus.SUCCESS);
+                Payment saved = paymentRepository.saveAndFlush(payment);
+
+                // Fund escrow atomically
+                escrowService.fundEscrow(
+                        saved.getDealId(),
+                        saved.getMilestoneId(),
+                        saved.getId(),
+                        saved.getAmount(),
+                        saved.getCurrency(),
+                        saved.getBuyerId()
+                );
+
+                auditService.logEvent(
+                        saved.getBuyerId(),
+                        "PAYMENT_VERIFIED",
+                        "PAYMENT",
+                        saved.getId().toString(),
+                        "Payment verified via Razorpay webhook for order " + orderId + " (paymentId: " + paymentId + ")"
+                );
+
+                Deal deal = dealRepository.findById(saved.getDealId()).orElse(null);
+                if (deal != null) {
+                    notificationService.sendNotification(
+                            deal.getSellerId(),
+                            "Milestone Payment Received (Webhook)",
+                            "Payment of " + saved.getAmount() + " " + saved.getCurrency() + " verified via webhook and deposited into escrow.",
+                            "/vendor/projects/" + deal.getId()
+                    );
+                }
+
+                log.info("Payment {} successfully marked SUCCESS and escrow funded via webhook", saved.getId());
+                return Map.of("status", "success", "paymentId", saved.getId());
+            } else if ("payment.failed".equals(event) || "failed".equalsIgnoreCase(status)) {
+                payment.setStatus(PaymentStatus.FAILED);
+                if (paymentId != null) {
+                    payment.setProviderPaymentId(paymentId);
+                }
+                paymentRepository.saveAndFlush(payment);
+
+                auditService.logEvent(
+                        payment.getBuyerId(),
+                        "PAYMENT_FAILED",
+                        "PAYMENT",
+                        payment.getId().toString(),
+                        "Payment failed via Razorpay webhook for order " + orderId
+                );
+
+                log.info("Payment {} marked FAILED via webhook", payment.getId());
+                return Map.of("status", "failed", "paymentId", payment.getId());
+            }
+
+            return Map.of("status", "unhandled_event", "event", event);
+        } catch (BadRequestException bre) {
+            throw bre;
+        } catch (Exception e) {
+            log.error("Error processing Razorpay webhook: {}", e.getMessage(), e);
+            throw new BadRequestException("Failed to process webhook payload: " + e.getMessage());
+        }
     }
 
     private void validatePaymentAccess(Payment payment, UserPrincipal currentUser) {

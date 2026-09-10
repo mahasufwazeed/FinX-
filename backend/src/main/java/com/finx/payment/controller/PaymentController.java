@@ -74,4 +74,13 @@ public class PaymentController {
         List<PaymentResponse> payments = paymentService.getPaymentsForBuyer(currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success(payments));
     }
+
+    @PostMapping("/webhook")
+    @Operation(summary = "Razorpay Webhook Handler", description = "Receives asynchronous payment events and cryptographically verifies signatures")
+    public ResponseEntity<java.util.Map<String, Object>> handleRazorpayWebhook(
+            @RequestBody String rawPayload,
+            @RequestHeader(value = "X-Razorpay-Signature", required = false) String signature) {
+        java.util.Map<String, Object> result = paymentService.processWebhook(rawPayload, signature);
+        return ResponseEntity.ok(result);
+    }
 }

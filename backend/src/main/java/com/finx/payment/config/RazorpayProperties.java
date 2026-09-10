@@ -14,6 +14,7 @@ public class RazorpayProperties {
 
     private String keyId;
     private String keySecret;
+    private String webhookSecret;
     private String currency = "INR";
     private boolean sandboxMode = true;
 
@@ -60,6 +61,17 @@ public class RazorpayProperties {
 
     public void setKeySecret(String keySecret) {
         this.keySecret = keySecret;
+    }
+
+    public String getWebhookSecret() {
+        if (webhookSecret != null && !webhookSecret.trim().isEmpty()) {
+            return webhookSecret;
+        }
+        return keySecret;
+    }
+
+    public void setWebhookSecret(String webhookSecret) {
+        this.webhookSecret = webhookSecret;
     }
 
     public String getCurrency() {

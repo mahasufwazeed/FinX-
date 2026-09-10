@@ -158,4 +158,58 @@ class PaymentServiceTest {
 
         verify(escrowService, never()).fundEscrow(any(), any(), any(), any(), any(), any());
     }
+
+    @Test
+    @DisplayName("Process valid payment.captured webhook and fund escrow")
+    void processWebhook_captured_success() {
+        Payment payment = new Payment(dealId, milestoneId, buyerId, BigDecimal.valueOf(10000), "INR", "order_webhook_123", null);
+        payment.setId(UUID.randomUUID());
+
+        String payload = "{\"event\":\"payment.captured\",\"payload\":{\"payment\":{\"entity\":{\"id\":\"pay_wbk_1\",\"order_id\":\"order_webhook_123\",\"status\":\"captured\"}}}}";
+        String signature = "valid_sig";
+
+        when(razorpayService.verifyWebhookSignature(payload, signature)).thenReturn(true);
+        when(paymentRepository.findByProviderOrderId("order_webhook_123")).thenReturn(Optional.of(payment));
+        when(paymentRepository.saveAndFlush(any(Payment.class))).thenAnswer(i -> i.getArgument(0));
+
+        java.util.Map<String, Object> result = paymentService.processWebhook(payload, signature);
+
+        assertThat(result.get("status")).isEqualTo("success");
+        verify(escrowService).fundEscrow(eq(dealId), eq(milestoneId), eq(payment.getId()), eq(BigDecimal.valueOf(10000)), eq("INR"), eq(buyerId));
+        verify(auditService).logEvent(eq(buyerId), eq("PAYMENT_VERIFIED"), eq("PAYMENT"), any(), any());
+    }
+
+    @Test
+    @DisplayName("Idempotent webhook: already processed payment returns already_processed without funding again")
+    void processWebhook_duplicate_idempotent() {
+        Payment payment = new Payment(dealId, milestoneId, buyerId, BigDecimal.valueOf(10000), "INR", "order_webhook_dup", null);
+        payment.setId(UUID.randomUUID());
+        payment.setStatus(PaymentStatus.SUCCESS);
+
+        String payload = "{\"event\":\"payment.captured\",\"payload\":{\"payment\":{\"entity\":{\"id\":\"pay_wbk_dup\",\"order_id\":\"order_webhook_dup\",\"status\":\"captured\"}}}}";
+        String signature = "valid_sig";
+
+        when(razorpayService.verifyWebhookSignature(payload, signature)).thenReturn(true);
+        when(paymentRepository.findByProviderOrderId("order_webhook_dup")).thenReturn(Optional.of(payment));
+
+        java.util.Map<String, Object> result = paymentService.processWebhook(payload, signature);
+
+        assertThat(result.get("status")).isEqualTo("already_processed");
+        verify(escrowService, never()).fundEscrow(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Reject webhook with invalid signature")
+    void processWebhook_invalidSignature() {
+        String payload = "{\"event\":\"payment.captured\"}";
+        String signature = "invalid_sig";
+
+        when(razorpayService.verifyWebhookSignature(payload, signature)).thenReturn(false);
+
+        assertThatThrownBy(() -> paymentService.processWebhook(payload, signature))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Invalid webhook signature");
+
+        verify(paymentRepository, never()).findByProviderOrderId(any());
+    }
 }

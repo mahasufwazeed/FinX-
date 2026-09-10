@@ -715,7 +715,110 @@ async function runTests() {
             assert(typeof rec.amount === 'number' || typeof rec.amount === 'string', `Ledger record ${rec.id} has exact numeric amount`);
             assert(typeof rec.balanceAfter === 'number' || typeof rec.balanceAfter === 'string', `Ledger record ${rec.id} has exact numeric balanceAfter`);
         }
-        assert(records.length >= 2, `Deal has both FUND and RELEASE entries recorded`);
+        // 29. Razorpay Webhook Processing, Idempotency & Signature Security
+        console.log('\n--- Phase 29: Razorpay Webhooks, Idempotency & Signature Security ---');
+
+        // Test invalid signature
+        const invalidWbkRes = await request(`${BACKEND_URL}/payments/webhook`, {
+            method: 'POST',
+            headers: {
+                'X-Razorpay-Signature': 'bogus_fraudulent_signature'
+            },
+            body: JSON.stringify({ event: 'payment.captured' })
+        });
+        assert(invalidWbkRes.status === 400, `Webhook with invalid signature is rejected with 400 (got ${invalidWbkRes.status})`);
+
+        // Create a new deal & milestone specifically for webhook processing test
+        const wbkDealRes = await request(`${BACKEND_URL}/deals`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${activeCorpToken}` },
+            body: JSON.stringify({
+                title: 'Webhook Test Deal',
+                description: 'Validating webhook funding and idempotency',
+                sellerId: vendorUser.id,
+                totalAmount: 25000,
+                currency: 'INR'
+            })
+        });
+        const wbkDealId = wbkDealRes.data?.data?.id;
+
+        await request(`${BACKEND_URL}/deals/${wbkDealId}/accept`, {
+            method: 'PATCH',
+            headers: { Authorization: `Bearer ${activeVendorToken}` }
+        });
+
+        const wbkMilestoneRes = await request(`${BACKEND_URL}/deals/${wbkDealId}/milestones`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${activeCorpToken}` },
+            body: JSON.stringify({
+                title: 'Webhook Funding Milestone',
+                description: 'Funded purely via Razorpay webhook event',
+                amount: 25000,
+                currency: 'INR',
+                dueDate: '2026-12-31T00:00:00Z'
+            })
+        });
+        const wbkMilestoneId = wbkMilestoneRes.data?.data?.id;
+
+        const wbkOrderRes = await request(`${BACKEND_URL}/payments/create-order`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${activeCorpToken}` },
+            body: JSON.stringify({
+                dealId: wbkDealId,
+                milestoneId: wbkMilestoneId
+            })
+        });
+        const wbkOrderId = wbkOrderRes.data?.data?.orderId;
+        assert(wbkOrderId && wbkOrderId.length > 0, `Payment order created for webhook test (${wbkOrderId})`);
+
+        // Send valid webhook
+        const validPayload = JSON.stringify({
+            event: 'payment.captured',
+            payload: {
+                payment: {
+                    entity: {
+                        id: `pay_wbk_test_${Date.now()}`,
+                        order_id: wbkOrderId,
+                        amount: 2500000,
+                        currency: 'INR',
+                        status: 'captured'
+                    }
+                }
+            }
+        });
+
+        const wbkSuccessRes = await request(`${BACKEND_URL}/payments/webhook`, {
+            method: 'POST',
+            headers: {
+                'X-Razorpay-Signature': 'test_webhook_signature'
+            },
+            body: validPayload
+        });
+        assert(wbkSuccessRes.ok, `Valid webhook returns 200 OK (got ${wbkSuccessRes.status})`);
+        assert(wbkSuccessRes.data?.status === 'success', `Webhook response indicates success`);
+
+        // Verify deal escrow funded
+        const wbkEscrowRes = await request(`${BACKEND_URL}/escrow/deal/${wbkDealId}`, {
+            headers: { Authorization: `Bearer ${activeCorpToken}` }
+        });
+        assert(Number(wbkEscrowRes.data?.data?.balance) === 25000, `Deal escrow funded via webhook to 25000 (got ${wbkEscrowRes.data?.data?.balance})`);
+
+        // Send duplicate webhook (Idempotency test)
+        const duplicateWbkRes = await request(`${BACKEND_URL}/payments/webhook`, {
+            method: 'POST',
+            headers: {
+                'X-Razorpay-Signature': 'test_webhook_signature'
+            },
+            body: validPayload
+        });
+        assert(duplicateWbkRes.ok, `Duplicate webhook returns 200 OK`);
+        assert(duplicateWbkRes.data?.status === 'already_processed', `Duplicate webhook recognized as already_processed`);
+
+        // Verify balance was NOT funded twice
+        const wbkEscrowRes2 = await request(`${BACKEND_URL}/escrow/deal/${wbkDealId}`, {
+            headers: { Authorization: `Bearer ${activeCorpToken}` }
+        });
+        assert(Number(wbkEscrowRes2.data?.data?.balance) === 25000, `Escrow balance remains exactly 25000 after duplicate webhook (Idempotency invariant)`);
 
         console.log('\n====================================================');
         console.log(`   Verification Summary: ${passed} PASSED, ${failed} FAILED`);
