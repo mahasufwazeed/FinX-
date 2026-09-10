@@ -35,4 +35,10 @@ public class AuditService {
             return null;
         }
     }
+
+    @Transactional(readOnly = true)
+    public java.util.List<AuditLog> getRecentAuditLogs() {
+        return auditLogRepository.findAll(org.springframework.data.domain.Sort.by(
+                org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
+    }
 }
