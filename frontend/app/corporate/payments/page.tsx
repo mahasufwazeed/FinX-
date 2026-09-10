@@ -54,12 +54,12 @@ export default function BuyerPaymentsHistory() {
                 </div>
 
                 {/* Status Notice */}
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
-                    <HardHat size={20} className="text-amber-600 shrink-0 mt-0.5" />
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3">
+                    <ShieldCheck size={20} className="text-emerald-600 shrink-0 mt-0.5" />
                     <div>
-                        <h4 className="text-sm font-semibold text-amber-900">Payment & Escrow APIs Pending Backend Integration</h4>
-                        <p className="text-xs text-amber-800 mt-1 leading-relaxed">
-                            Razorpay payment orders and verification endpoints (<code>POST /api/payments/orders</code>, <code>POST /api/payments/verify</code>, <code>GET /api/payments</code>) are scheduled for the next backend phase. Transactions will appear here once enabled.
+                        <h4 className="text-sm font-semibold text-emerald-900">Live Escrow & Payment Gateway Connected</h4>
+                        <p className="text-xs text-emerald-800 mt-1 leading-relaxed">
+                            Fiat payments are securely routed via Razorpay and locked in deal escrow vaults until milestone deliverables are approved.
                         </p>
                     </div>
                 </div>

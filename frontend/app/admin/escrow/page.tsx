@@ -5,6 +5,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Lock, Unlock, ShieldAlert } from "lucide-react";
 import { escrowService } from "@/services/escrow.service";
+import { milestoneService } from "@/services/milestone.service";
 import { Milestone } from "@/types";
 import { Button } from "@/components/ui/Button";
 
@@ -24,10 +25,19 @@ export default function AdminEscrowDashboard() {
     }, []);
 
     const fetchData = () => {
-        escrowService.getAdminEscrows()
-            .then(setData)
+        setIsLoading(true);
+        milestoneService.getAllMilestones()
+            .then((milestones) => {
+                const list = Array.isArray(milestones) ? milestones : [];
+                setData({
+                    pending: list.filter(m => m.status === 'APPROVED'),
+                    released: list.filter(m => m.status === 'RELEASED' || (m.status as string) === 'COMPLETED'),
+                    disputed: list.filter(m => (m.status as string) === 'DISPUTED')
+                });
+            })
+            .catch(() => {})
             .finally(() => setIsLoading(false));
-    }
+    };
 
     const handleRelease = async (milestoneId: string) => {
         setProcessingId(milestoneId);

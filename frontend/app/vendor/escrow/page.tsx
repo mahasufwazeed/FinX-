@@ -50,12 +50,12 @@ export default function VendorEscrowDashboard() {
                 </div>
 
                 {/* API Status Notice */}
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
-                    <HardHat size={20} className="text-amber-600 shrink-0 mt-0.5" />
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3">
+                    <ShieldCheck size={20} className="text-emerald-600 shrink-0 mt-0.5" />
                     <div>
-                        <h4 className="text-sm font-semibold text-amber-900">Escrow Payout Engine Pending Backend Integration</h4>
-                        <p className="text-xs text-amber-800 mt-1 leading-relaxed">
-                            Automated banking sweep and escrow release verification (<code>POST /api/escrow/&#123;id&#125;/release</code>) are scheduled for subsequent backend milestones. Currently displaying real contract commitments from your assigned deals.
+                        <h4 className="text-sm font-semibold text-emerald-900">Live Escrow Protection Active</h4>
+                        <p className="text-xs text-emerald-800 mt-1 leading-relaxed">
+                            Escrow balances reflect committed contract funds deposited into FINX escrow vaults by your corporate buyers.
                         </p>
                     </div>
                 </div>

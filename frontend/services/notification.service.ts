@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import { ApiResponse } from '@/types';
 
 export interface Notification {
     id: string;
@@ -12,10 +13,10 @@ export interface Notification {
 export const notificationService = {
     getNotifications: async (): Promise<Notification[]> => {
         try {
-            const { data } = await api.get('/notifications');
+            const response = await api.get<ApiResponse<Notification[]> | Notification[]>('/notifications');
+            const data = (response.data as ApiResponse<Notification[]>)?.data || (response.data as Notification[]);
             return data || [];
         } catch {
-            // Notifications API not enabled on backend yet
             return [];
         }
     },
@@ -23,14 +24,14 @@ export const notificationService = {
         try {
             await api.patch(`/notifications/${id}/read`);
         } catch {
-            // No-op until backend notification service is enabled
+            // gracefully catch if transient error
         }
     },
     markAllAsRead: async () => {
         try {
             await api.patch('/notifications/read-all');
         } catch {
-            // No-op until backend notification service is enabled
+            // gracefully catch if transient error
         }
     }
 };

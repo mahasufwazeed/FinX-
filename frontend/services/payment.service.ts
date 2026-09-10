@@ -1,7 +1,5 @@
-import { api } from '@/lib/api';
-import { Payment } from '@/types';
-
-export const PAYMENT_API_DISABLED_MSG = "Payment and Razorpay Escrow APIs are not yet implemented on the backend.";
+import { api } from "@/lib/api";
+import { Payment, ApiResponse } from "@/types";
 
 export interface CreatePaymentOrderResponse {
     keyId: string;
@@ -9,6 +7,8 @@ export interface CreatePaymentOrderResponse {
     amount: number;
     currency: string;
     paymentId: string;
+    dealTitle?: string;
+    milestoneTitle?: string;
 }
 
 export interface VerifyPaymentPayload {
@@ -19,27 +19,41 @@ export interface VerifyPaymentPayload {
 }
 
 export const paymentService = {
-    createPaymentOrder: async (projectId: string, milestoneId: string): Promise<CreatePaymentOrderResponse> => {
-        return Promise.reject(new Error(PAYMENT_API_DISABLED_MSG));
+    createPaymentOrder: async (dealId: string, milestoneId: string, idempotencyKey?: string): Promise<CreatePaymentOrderResponse> => {
+        const response = await api.post<ApiResponse<CreatePaymentOrderResponse> | CreatePaymentOrderResponse>(
+            "/payments/create-order",
+            { dealId, milestoneId, idempotencyKey }
+        );
+        const data = (response.data as ApiResponse<CreatePaymentOrderResponse>)?.data || (response.data as CreatePaymentOrderResponse);
+        return data;
     },
 
-    verifyPayment: async (payload: VerifyPaymentPayload): Promise<any> => {
-        return Promise.reject(new Error(PAYMENT_API_DISABLED_MSG));
+    verifyPayment: async (payload: VerifyPaymentPayload): Promise<Payment> => {
+        const response = await api.post<ApiResponse<Payment> | Payment>(
+            "/payments/verify",
+            payload
+        );
+        const data = (response.data as ApiResponse<Payment>)?.data || (response.data as Payment);
+        return data;
     },
 
     getPaymentById: async (paymentId: string): Promise<Payment> => {
-        return Promise.reject(new Error(PAYMENT_API_DISABLED_MSG));
+        const response = await api.get<ApiResponse<Payment> | Payment>(`/payments/${paymentId}`);
+        const data = (response.data as ApiResponse<Payment>)?.data || (response.data as Payment);
+        return data;
     },
 
-    getProjectPayments: async (projectId: string): Promise<Payment[]> => {
-        return [];
+    getProjectPayments: async (dealId: string): Promise<Payment[]> => {
+        const response = await api.get<ApiResponse<Payment[]> | Payment[]>(`/payments/deal/${dealId}`);
+        const data = (response.data as ApiResponse<Payment[]>)?.data || (response.data as Payment[]);
+        return data || [];
     },
 
     getBuyerPayments: async (): Promise<Payment[]> => {
-        return [];
-    },
-
-    getPaymentStatus: async (paymentId: string): Promise<string> => {
-        return "NOT_CONFIGURED";
+        const response = await api.get<ApiResponse<Payment[]> | Payment[]>("/payments/buyer");
+        const data = (response.data as ApiResponse<Payment[]>)?.data || (response.data as Payment[]);
+        return data || [];
     }
 };
+
+export const PAYMENT_API_DISABLED_MSG = "";

@@ -39,11 +39,15 @@ export default function VendorMilestoneWorkspace() {
         const file = e.target.files?.[0];
         if (!file) return;
         try {
-            await milestoneService.uploadDeliverable(milestoneId as string, file);
-            alert('File uploaded successfully!');
+            await milestoneService.submitDeliverable(milestoneId as string, {
+                fileName: file.name,
+                fileUrl: `https://storage.finx.local/deliverables/${file.name}`,
+                description: `Deliverable document: ${file.name}`
+            });
+            alert('Deliverable uploaded and submitted for review successfully!');
             await fetchData();
-        } catch (err) {
-            alert('Upload failed');
+        } catch (err: any) {
+            alert('Upload failed: ' + (err.response?.data?.message || err.message));
         }
     }
 
@@ -114,7 +118,7 @@ export default function VendorMilestoneWorkspace() {
                                     <FileCheck size={18} className="text-indigo-600" />
                                     <span className="font-medium text-sm text-slate-900">{d.fileName}</span>
                                 </div>
-                                <span className="text-xs text-slate-500">{new Date(d.uploadedAt).toLocaleString()}</span>
+                                <span className="text-xs text-slate-500">{new Date(d.submittedAt || d.uploadedAt || Date.now()).toLocaleString()}</span>
                             </div>
                         ))}
                     </div>

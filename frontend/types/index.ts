@@ -100,15 +100,23 @@ export interface Deliverable {
   milestoneId: string;
   fileName: string;
   fileUrl: string;
-  uploadedBy: string;
-  uploadedAt: string;
+  description?: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  submittedBy?: string;
+  submittedAt?: string;
+  uploadedAt?: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  rejectionReason?: string;
 }
 
 export interface Milestone {
   id: string;
+  dealId?: string;
   projectId: string;
   title: string;
   description: string;
+  sequence?: number;
   amount: number;
   currency: string;
   dueDate?: string;
@@ -119,6 +127,10 @@ export interface Milestone {
 }
 
 export type PaymentStatus =
+  | "PENDING"
+  | "SUCCESS"
+  | "FAILED"
+  | "REFUNDED"
   | "NOT_FUNDED"
   | "ORDER_CREATED"
   | "PAYMENT_PENDING"
@@ -126,20 +138,44 @@ export type PaymentStatus =
   | "PAYMENT_SUCCESS"
   | "PAYMENT_FAILED"
   | "PAYMENT_VERIFICATION_PENDING"
-  | "REFUNDED"
   | "CANCELLED";
 
 export interface Payment {
   id: string;
+  dealId?: string;
   projectId: string;
   milestoneId: string;
+  buyerId?: string;
   amount: number;
   currency: string;
+  provider?: string;
   status: PaymentStatus;
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface EscrowAccount {
+  id: string;
+  dealId: string;
+  balance: number;
+  currency: string;
+  status: 'ACTIVE' | 'FROZEN' | 'CLOSED';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EscrowLedger {
+  id: string;
+  escrowAccountId: string;
+  paymentId?: string;
+  milestoneId?: string;
+  transactionType: 'FUND' | 'RELEASE' | 'REFUND' | 'HOLD';
+  amount: number;
+  balanceAfter: number;
+  description?: string;
+  createdAt: string;
 }
 
 export interface EscrowTransaction {
@@ -158,10 +194,15 @@ export interface Invoice {
 
 export interface Dispute {
   id: string;
+  dealId?: string;
   projectId: string;
-  milestoneId: string;
+  milestoneId?: string;
+  raisedBy?: string;
   reason: string;
-  status: 'OPEN' | 'RESOLVED';
+  status: 'OPEN' | 'UNDER_REVIEW' | 'RESOLVED' | 'REJECTED';
+  resolutionNotes?: string;
+  resolvedAt?: string;
+  createdAt?: string;
 }
 
 export interface AuditLog {

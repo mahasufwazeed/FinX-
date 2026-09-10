@@ -54,12 +54,12 @@ export default function VendorPaymentsPage() {
                 </div>
 
                 {/* API Status Notice */}
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
-                    <HardHat size={20} className="text-amber-600 shrink-0 mt-0.5" />
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3">
+                    <ShieldCheck size={20} className="text-emerald-600 shrink-0 mt-0.5" />
                     <div>
-                        <h4 className="text-sm font-semibold text-amber-900">Payout & Disbursement APIs Pending Backend Integration</h4>
-                        <p className="text-xs text-amber-800 mt-1 leading-relaxed">
-                            Vendor bank disbursement endpoints (<code>POST /api/escrow/&#123;id&#125;/release</code> and Razorpay payouts) are scheduled for the next backend release. Escrow milestone settlements will appear here once connected.
+                        <h4 className="text-sm font-semibold text-emerald-900">Escrow Payouts & Milestone Settlements Active</h4>
+                        <p className="text-xs text-emerald-800 mt-1 leading-relaxed">
+                            Buyer deposits are locked in escrow and credited to your ledger upon milestone completion and deliverable approval.
                         </p>
                     </div>
                 </div>

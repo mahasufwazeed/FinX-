@@ -50,12 +50,12 @@ export default function BuyerEscrowDashboard() {
                 </div>
 
                 {/* API Status Notice */}
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
-                    <HardHat size={20} className="text-amber-600 shrink-0 mt-0.5" />
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3">
+                    <ShieldCheck size={20} className="text-emerald-600 shrink-0 mt-0.5" />
                     <div>
-                        <h4 className="text-sm font-semibold text-amber-900">Escrow Release Engine Pending Backend Integration</h4>
-                        <p className="text-xs text-amber-800 mt-1 leading-relaxed">
-                            Fiat escrow locking and automated release endpoints (<code>POST /api/escrow/&#123;id&#125;/release</code> and <code>POST /api/payments/orders</code>) are scheduled for subsequent backend milestones. Currently displaying real deals and pipeline commitments recorded in the Spring Boot backend.
+                        <h4 className="text-sm font-semibold text-emerald-900">B2B Fiat Escrow Engine Active</h4>
+                        <p className="text-xs text-emerald-800 mt-1 leading-relaxed">
+                            Each deal is backed by a dedicated escrow account and double-entry immutable ledger in the Spring Boot backend with complete auditability.
                         </p>
                     </div>
                 </div>

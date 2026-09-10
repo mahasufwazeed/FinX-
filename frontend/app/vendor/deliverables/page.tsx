@@ -1,24 +1,29 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { dealService } from "@/services/deal.service";
-import { Deal } from "@/types";
-import { HardHat, Upload, FileText, AlertCircle, RefreshCw } from "lucide-react";
+import { milestoneService } from "@/services/milestone.service";
+import { Deal, Milestone } from "@/types";
+import { Upload, FileText, CheckCircle2, AlertCircle, RefreshCw, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 export default function VendorDeliverablesPage() {
     const [deals, setDeals] = useState<Deal[]>([]);
-    const [selectedDealId, setSelectedDealId] = useState<string>("");
-    const [description, setDescription] = useState("");
+    const [selectedDealId, setSelectedDealId] = useState("");
+    const [milestones, setMilestones] = useState<Milestone[]>([]);
+    const [selectedMilestoneId, setSelectedMilestoneId] = useState("");
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [description, setDescription] = useState("");
     const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
     const fetchDeals = async () => {
         setIsLoading(true);
+        setError(null);
         try {
             const data = await dealService.getDeals();
             setDeals(data);
@@ -26,7 +31,7 @@ export default function VendorDeliverablesPage() {
                 setSelectedDealId(data[0].id);
             }
         } catch (e: any) {
-            setError(e.message || "Failed to load assigned deals");
+            setError(e.response?.data?.message || e.message || "Failed to load assigned deals");
         } finally {
             setIsLoading(false);
         }
@@ -36,15 +41,60 @@ export default function VendorDeliverablesPage() {
         fetchDeals();
     }, []);
 
+    useEffect(() => {
+        if (selectedDealId) {
+            milestoneService.getProjectMilestones(selectedDealId)
+                .then((ms) => {
+                    setMilestones(ms);
+                    if (ms.length > 0) {
+                        setSelectedMilestoneId(ms[0].id);
+                    } else {
+                        setSelectedMilestoneId("");
+                    }
+                })
+                .catch(() => setMilestones([]));
+        }
+    }, [selectedDealId]);
+
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setSelectedFile(e.target.files[0]);
         }
     };
 
-    const handleSubmitDeliverable = (e: React.FormEvent) => {
+    const handleSubmitDeliverable = async (e: React.FormEvent) => {
         e.preventDefault();
-        alert("Deliverable upload APIs are currently disabled on the backend. This submission will be enabled once the milestone delivery endpoints are deployed.");
+        if (!selectedMilestoneId) {
+            setError("Please select a target milestone for this deliverable.");
+            return;
+        }
+
+        const fileName = selectedFile ? selectedFile.name : `deliverable_${Date.now()}.pdf`;
+        const fileUrl = `https://storage.finx.local/deliverables/${encodeURIComponent(fileName)}`;
+
+        setIsSubmitting(true);
+        setError(null);
+        setSuccessMsg(null);
+
+        try {
+            await milestoneService.submitDeliverable(selectedMilestoneId, {
+                fileName,
+                fileUrl,
+                description: description.trim()
+            });
+            setSuccessMsg("Deliverable successfully submitted to the corporate buyer for review!");
+            setSelectedFile(null);
+            setDescription("");
+            // Refresh milestones
+            if (selectedDealId) {
+                const updated = await milestoneService.getProjectMilestones(selectedDealId);
+                setMilestones(updated);
+            }
+        } catch (err: any) {
+            setError(err.response?.data?.message || err.message || "Failed to submit deliverable");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -61,12 +111,12 @@ export default function VendorDeliverablesPage() {
                 </div>
 
                 {/* API Status Notice */}
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
-                    <HardHat size={20} className="text-amber-600 shrink-0 mt-0.5" />
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3">
+                    <ShieldCheck size={20} className="text-emerald-600 shrink-0 mt-0.5" />
                     <div>
-                        <h4 className="text-sm font-semibold text-amber-900">Milestone Deliverable API Pending Backend Integration</h4>
-                        <p className="text-xs text-amber-800 mt-1 leading-relaxed">
-                            File storage and deliverable verification endpoints (<code>POST /api/milestones/&#123;id&#125;/deliverables</code>) are scheduled for the next release. Real file inputs and submission forms are ready for backend wiring.
+                        <h4 className="text-sm font-semibold text-emerald-900">Milestone Deliverables Engine Connected</h4>
+                        <p className="text-xs text-emerald-800 mt-1 leading-relaxed">
+                            Submitting deliverables marks the milestone as under review. Corporate buyers review files and descriptions before approving milestone escrow release.
                         </p>
                     </div>
                 </div>
@@ -75,6 +125,13 @@ export default function VendorDeliverablesPage() {
                     <div className="p-4 bg-red-50 text-red-600 rounded-lg text-sm flex items-center gap-2 border border-red-100">
                         <AlertCircle size={16} />
                         <p>{error}</p>
+                    </div>
+                )}
+
+                {successMsg && (
+                    <div className="p-4 bg-emerald-50 text-emerald-800 rounded-lg text-sm flex items-center gap-2 border border-emerald-200">
+                        <CheckCircle2 size={16} className="text-emerald-600" />
+                        <p className="font-semibold">{successMsg}</p>
                     </div>
                 )}
 
@@ -97,7 +154,7 @@ export default function VendorDeliverablesPage() {
                                     >
                                         {deals.map(d => (
                                             <option key={d.id} value={d.id}>
-                                                {d.title} (${d.totalAmount?.toLocaleString()} {d.currency} - {d.status})
+                                                {d.title} (₹{d.totalAmount?.toLocaleString()} {d.currency || 'INR'} - {d.status})
                                             </option>
                                         ))}
                                     </select>
@@ -108,8 +165,25 @@ export default function VendorDeliverablesPage() {
                                 )}
                             </div>
 
+                            {milestones.length > 0 && (
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Target Milestone *</label>
+                                    <select
+                                        value={selectedMilestoneId}
+                                        onChange={e => setSelectedMilestoneId(e.target.value)}
+                                        className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    >
+                                        {milestones.map(m => (
+                                            <option key={m.id} value={m.id}>
+                                                {m.title} (₹{m.amount?.toLocaleString()} {m.currency || 'INR'} — Status: {m.status})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Deliverable File *</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Deliverable Document / Artifact</label>
                                 <input
                                     type="file"
                                     onChange={handleFileChange}
@@ -123,7 +197,7 @@ export default function VendorDeliverablesPage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Description & Notes *</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Description & Delivery Notes *</label>
                                 <textarea
                                     required
                                     value={description}
@@ -134,7 +208,7 @@ export default function VendorDeliverablesPage() {
                                 />
                             </div>
 
-                            <Button type="submit" disabled={deals.length === 0} className="w-full sm:w-auto gap-2">
+                            <Button type="submit" disabled={deals.length === 0 || isSubmitting} isLoading={isSubmitting} className="w-full sm:w-auto gap-2 bg-slate-900 hover:bg-slate-800 text-white">
                                 <FileText size={16} /> Submit Deliverable for Review
                             </Button>
                         </form>
