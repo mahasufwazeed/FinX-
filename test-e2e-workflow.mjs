@@ -402,10 +402,20 @@ async function runTests() {
             '/admin',
             '/admin/users',
             '/admin/audit-logs',
+            '/admin/audit',
+            '/admin/projects',
             '/admin/disputes',
             '/corporate/disputes',
             '/finance',
-            '/finance/transactions'
+            '/finance/transactions',
+            '/finance/payments',
+            '/finance/invoices',
+            '/finance/reports',
+            '/project-manager',
+            '/project-manager/projects',
+            '/project-manager/reviews',
+            '/project-manager/deliverables',
+            '/project-manager/reports'
         ];
 
         for (const route of frontendRoutes) {
