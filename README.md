@@ -305,7 +305,7 @@ FINX is designed around secure financial workflows.
 
 ## 🧪 Testing & Verification
 
-### Automated End-to-End Suite (170 assertions across 28 phases)
+### Automated End-to-End Suite (190 assertions across 28 phases)
 To run the comprehensive live integration and security hardening test suite:
 ```bash
 node test-e2e-workflow.mjs
@@ -319,15 +319,22 @@ This executes and verifies:
 6. Deliverable validation & size constraints (>4000 characters rejected)
 7. Razorpay order creation and HMAC-SHA256 signature verification
 8. Fiat escrow ledger double-entry funding and release
-9. Double-release rejection (HTTP 400)
+9. Double-release rejection (HTTP 400 Bad Request)
 10. Legal disputes & arbitration (Freeze deal, admin ruling, resolution notes)
 11. Complete append-only audit trail logging (15 distinct business events)
-12. Zero floating-point monetary precision
+12. Zero floating-point monetary precision (Strict BigDecimal & DECIMAL(15, 2))
+13. Complete frontend route integrity across all 45 production pages
 
 ### Backend Unit & Integration Tests (38/38 classes passing)
 ```bash
 cd backend
 ./mvnw clean test
+```
+
+### Backend Executable Packaging
+```bash
+cd backend
+./mvnw clean package -DskipTests
 ```
 
 ### Frontend Typecheck & Production Build
@@ -337,6 +344,23 @@ npx tsc --noEmit
 npm run lint
 npm run build
 ```
+
+---
+
+## 📖 API Documentation (OpenAPI / Swagger)
+Interactive API specifications and contract schemas are generated dynamically by SpringDoc OpenAPI:
+* **JSON Schema:** `http://localhost:8080/v3/api-docs`
+* **Swagger UI:** `http://localhost:8080/swagger-ui/index.html`
+
+---
+
+## 🛡️ Failure & Disaster Recovery Architecture
+FINX is engineered to fail safely under adverse infrastructure conditions:
+* **Database Disconnection:** HikariCP connection pool manages backoff and auto-reconnection; Spring `@Transactional` boundaries guarantee zero partial ledger records or orphaned payments.
+* **Redis Cache Unavailability:** Token-bucket rate limiting gracefully fails open or logs warnings without interrupting critical escrow settlements.
+* **Gateway Outage:** In case of upstream Razorpay timeouts, pending payments remain in `PENDING` state and can be safely retried; escrow balance is never incremented without a cryptographically verified signature.
+* **Service Restarts:** All business state (users, deals, milestones, ledgers, audit trail) is persisted in Supabase PostgreSQL; services recover cleanly with zero in-memory data loss.
+
 
 ---
 

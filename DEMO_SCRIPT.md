@@ -140,3 +140,33 @@ This live demonstration presents a complete, zero-mock, real-time B2B fiat escro
 * **Cryptographic Security:** Razorpay HMAC-SHA256 signature verified server-side.
 * **IDOR & Role Isolation:** Corporate and Vendor permissions are strictly validated in Spring Security.
 * **Financial Integrity:** Zero floating-point arithmetic; strict double-entry ledgering prevents double-release.
+
+---
+
+## 💼 Investor & Judge Defense Q&A
+
+### 1. Problem: How does FINX solve payment trust between businesses?
+In traditional B2B service contracts, buyers fear paying upfront before seeing deliverables, while vendors fear delivering work before receiving payment. FINX solves this by introducing a milestone-based fiat escrow: the buyer deposits funds into a secure escrow account that is locked upon agreement. The vendor sees the funded milestone and executes with confidence, knowing the capital is reserved. Funds are only disbursed once the buyer inspects and approves the deliverable.
+
+### 2. Solution: How does milestone-based escrow work?
+Instead of a single lump-sum transfer, a deal is decomposed into sequential deliverables (e.g. Design -> Development -> Deployment). Each milestone is individually funded via Razorpay, held in the deal's dedicated escrow account, and unlocked sequentially. If a dispute arises on Milestone 2, Milestone 1 has already been settled, and Milestone 3 is not yet exposed.
+
+### 3. Differentiation: Why is FINX better than paying through a normal payment gateway?
+Standard payment gateways (Stripe, Razorpay, PayPal) provide binary immediate payouts: once charged, the funds belong to the seller, and buyers must resort to hostile credit card chargebacks. FINX introduces conditional programmatic custody: payments are verified and held in escrow ledgers, requiring explicit deliverable approval and dispute arbitration before any release occurs.
+
+### 4. Security: How are funds and approvals protected?
+- **Server-Side Verification:** Razorpay HMAC-SHA256 signatures are calculated server-side; client manipulation is impossible.
+- **Idempotency & Double-Release Protection:** Milestones can only be released once; subsequent requests are rejected with HTTP 400.
+- **IDOR Protection:** Spring Security and entity ownership validation guarantee third-party buyers or vendors cannot inspect or touch foreign deals.
+- **Strict Decimal Precision:** All balances use SQL `DECIMAL(15, 2)` and Java `BigDecimal` to eliminate floating-point rounding errors.
+
+### 5. Revenue: Where does FINX make money?
+- **Transaction Fee:** 1.5% - 2.5% take-rate on successfully settled milestone escrow releases.
+- **SaaS Subscriptions:** Corporate tier with advanced multi-tier approval hierarchies, enterprise ERP reconciliation, and custom legal contracts.
+- **Float Interest:** Yield on aggregated treasury reserves held in compliant partner escrow accounts.
+
+### 6. Scalability: How can the system support more businesses and transactions?
+- **Stateless Architecture:** Next.js frontend and Spring Boot microservice scale horizontally behind a load balancer.
+- **Distributed Caching & Queuing:** Redis handles rate-limiting, session management, and asynchronous notification events.
+- **Relational Integrity:** Supabase PostgreSQL with HikariCP connection pooling maintains strict ACID guarantees for concurrent financial mutations.
+
