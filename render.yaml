@@ -36,6 +36,14 @@ services:
         value: "true"
       - key: RAZORPAY_CURRENCY
         value: "INR"
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        value: "https://finx-backend.onrender.com/api/auth/google/callback"
+      - key: FRONTEND_OAUTH_CALLBACK_URL
+        value: "https://finx-frontend.onrender.com/auth/callback/google"
 
   # ============================================================================
   # 2. Frontend: Next.js 15 App Router
@@ -57,3 +65,7 @@ services:
         value: "3000"
       - key: NEXT_PUBLIC_RAZORPAY_KEY_ID
         sync: false
+      - key: NEXT_PUBLIC_GOOGLE_CLIENT_ID
+        sync: false
+      - key: NEXT_PUBLIC_GOOGLE_REDIRECT_URI
+        value: "https://finx-backend.onrender.com/api/auth/google/callback"

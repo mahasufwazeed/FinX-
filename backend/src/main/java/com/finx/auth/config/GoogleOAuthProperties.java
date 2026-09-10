@@ -19,6 +19,26 @@ public class GoogleOAuthProperties {
 
     @PostConstruct
     public void validateConfiguration() {
+        // Dynamic resolution for Render and Production environments
+        String renderExternalUrl = System.getenv("RENDER_EXTERNAL_URL");
+        if (renderExternalUrl != null && !renderExternalUrl.trim().isEmpty()) {
+            String baseUrl = renderExternalUrl.trim().replaceAll("/+$", "");
+            // If redirectUri is default localhost, override with Render's public URL
+            if (this.redirectUri == null || this.redirectUri.trim().isEmpty() || this.redirectUri.contains("localhost")) {
+                this.redirectUri = baseUrl + "/api/auth/google/callback";
+                log.info("[OAUTH CONFIGURATION] Automatically resolved redirectUri from RENDER_EXTERNAL_URL: {}", this.redirectUri);
+            }
+        }
+
+        String frontendUrl = System.getenv("FRONTEND_URL");
+        if (frontendUrl != null && !frontendUrl.trim().isEmpty()) {
+            String baseFrontend = frontendUrl.trim().replaceAll("/+$", "");
+            if (this.frontendRedirectUrl == null || this.frontendRedirectUrl.trim().isEmpty() || this.frontendRedirectUrl.contains("localhost")) {
+                this.frontendRedirectUrl = baseFrontend + "/auth/callback/google";
+                log.info("[OAUTH CONFIGURATION] Automatically resolved frontendRedirectUrl from FRONTEND_URL: {}", this.frontendRedirectUrl);
+            }
+        }
+
         if (!isConfigured()) {
             log.warn("================================================================================");
             log.warn("[OAUTH CONFIGURATION] Google OAuth 2.0 is NOT configured on this server.");
@@ -41,6 +61,31 @@ public class GoogleOAuthProperties {
     public boolean isConfigured() {
         return clientId != null && !clientId.trim().isEmpty() &&
                clientSecret != null && !clientSecret.trim().isEmpty();
+    }
+
+    public String buildAuthorizationUrl() {
+        if (!isConfigured()) {
+            return null;
+        }
+        try {
+            return "https://accounts.google.com/o/oauth2/v2/auth" +
+                    "?client_id=" + java.net.URLEncoder.encode(clientId, java.nio.charset.StandardCharsets.UTF_8) +
+                    "&redirect_uri=" + java.net.URLEncoder.encode(redirectUri, java.nio.charset.StandardCharsets.UTF_8) +
+                    "&response_type=code" +
+                    "&scope=" + java.net.URLEncoder.encode("openid email profile", java.nio.charset.StandardCharsets.UTF_8) +
+                    "&access_type=offline" +
+                    "&prompt=select_account";
+        } catch (Exception e) {
+            log.error("Failed to encode Google authorization URL", e);
+            return null;
+        }
+    }
+
+    public String buildBackendLoginUrl() {
+        if (redirectUri != null && redirectUri.contains("/api/auth/google/callback")) {
+            return redirectUri.replace("/api/auth/google/callback", "/api/auth/google/login");
+        }
+        return redirectUri != null ? redirectUri.replaceAll("/+$", "") + "/login" : "http://localhost:8080/api/auth/google/login";
     }
 
     public String getClientId() {

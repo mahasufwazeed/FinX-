@@ -115,13 +115,11 @@ public class AuthController {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Google OAuth is not configured on the server.");
             return;
         }
-        String googleAuthUrl = "https://accounts.google.com/o/oauth2/v2/auth" +
-                "?client_id=" + URLEncoder.encode(googleOAuthProperties.getClientId(), StandardCharsets.UTF_8) +
-                "&redirect_uri=" + URLEncoder.encode(googleOAuthProperties.getRedirectUri(), StandardCharsets.UTF_8) +
-                "&response_type=code" +
-                "&scope=" + URLEncoder.encode("openid email profile", StandardCharsets.UTF_8) +
-                "&access_type=offline" +
-                "&prompt=select_account";
+        String googleAuthUrl = googleOAuthProperties.buildAuthorizationUrl();
+        if (googleAuthUrl == null) {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to generate Google authorization URL.");
+            return;
+        }
         response.sendRedirect(googleAuthUrl);
     }
 

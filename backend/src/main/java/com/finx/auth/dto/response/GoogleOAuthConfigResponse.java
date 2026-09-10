@@ -5,6 +5,7 @@ public class GoogleOAuthConfigResponse {
     private boolean configured;
     private String clientId;
     private String redirectUri;
+    private String authUrl;
 
     public GoogleOAuthConfigResponse() {
     }
@@ -13,6 +14,13 @@ public class GoogleOAuthConfigResponse {
         this.configured = configured;
         this.clientId = clientId;
         this.redirectUri = redirectUri;
+    }
+
+    public GoogleOAuthConfigResponse(boolean configured, String clientId, String redirectUri, String authUrl) {
+        this.configured = configured;
+        this.clientId = clientId;
+        this.redirectUri = redirectUri;
+        this.authUrl = authUrl;
     }
 
     public boolean isConfigured() {
@@ -37,5 +45,13 @@ public class GoogleOAuthConfigResponse {
 
     public void setRedirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
+    }
+
+    public String getAuthUrl() {
+        return authUrl;
+    }
+
+    public void setAuthUrl(String authUrl) {
+        this.authUrl = authUrl;
     }
 }
