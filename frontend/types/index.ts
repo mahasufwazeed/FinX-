@@ -3,13 +3,33 @@ export type Role = "CORPORATE" | "VENDOR" | "PROJECT_MANAGER" | "ADMIN" | "FINAN
 export interface User {
   id: string;
   email: string;
-  fullName: string;
+  fullName?: string;
+  name?: string;
   role: Role;
+  status?: string;
+  createdAt?: string;
+}
+
+export interface SellerSummary {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  status?: string;
+}
+
+export interface GoogleOAuthConfig {
+  configured: boolean;
+  clientId?: string;
+  authUrl?: string;
+  redirectUri?: string;
 }
 
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
+  tokenType?: string;
+  expiresIn?: number;
   user: User;
 }
 

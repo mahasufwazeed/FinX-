@@ -36,7 +36,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                     { name: "Projects", href: "/admin/projects", icon: Briefcase },
                     { name: "Escrow Transactions", href: "/admin/escrow", icon: ShieldCheck },
                     { name: "Disputes", href: "/admin/disputes", icon: ShieldCheck },
-                    { name: "Audit Logs", href: "/admin/audit", icon: FileText },
+                    { name: "Audit Logs", href: "/admin/audit-logs", icon: FileText },
                     ...baseLinks
                 ];
             case "FINANCE":
@@ -65,6 +65,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                     { name: "Milestones", href: "/vendor/milestones", icon: CheckSquare },
                     { name: "Deliverables", href: "/vendor/deliverables", icon: FileText },
                     { name: "Payments", href: "/vendor/payments", icon: CreditCard },
+                    { name: "Escrow", href: "/vendor/escrow", icon: ShieldCheck },
                     ...baseLinks
                 ];
             case "CORPORATE":
@@ -114,11 +115,11 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                 <div className="p-4 border-t border-slate-200">
                     <div className="flex items-center gap-4">
                         <NotificationBell />
-                        <div className="w-8 h-8 rounded-full bg-slate-200 border-2 border-white shadow-sm flex items-center justify-center text-slate-600 font-bold text-sm">
-                            {user?.fullName?.charAt(0) || "U"}
+                        <div className="w-8 h-8 rounded-full bg-blue-100 border border-blue-200 shadow-sm flex items-center justify-center text-blue-700 font-bold text-sm">
+                            {(user?.name || user?.fullName || "User").charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-900 truncate">{user?.fullName}</p>
+                            <p className="text-sm font-medium text-slate-900 truncate">{user?.name || user?.fullName || "User"}</p>
                             <p className="text-xs text-slate-500 truncate">{user?.role?.replace('_', ' ')}</p>
                         </div>
                     </div>

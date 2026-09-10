@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/Input";
 import Link from "next/link";
 import { ShieldCheck, CheckCircle2, ChevronRight } from "lucide-react";
 import axios from "axios";
-import { GoogleLogin } from "@react-oauth/google";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 const registerSchema = z.object({
     fullName: z.string().trim().min(2, { message: "Name must be at least 2 characters" }),
@@ -223,19 +223,10 @@ export default function RegisterPage() {
                         <span className="w-full border-t border-slate-200"></span>
                     </div>
 
-                    <div className="mt-6 flex justify-center">
-                        <GoogleLogin
-                            onSuccess={async (credentialResponse) => {
-                                try {
-                                    if (credentialResponse.credential) {
-                                        await googleLogin(credentialResponse.credential);
-                                    }
-                                } catch (e) {
-                                    setError("Google Sign Up failed.");
-                                }
-                            }}
-                            onError={() => setError("Google Sign Up failed.")}
-                            useOneTap
+                    <div className="mt-6">
+                        <GoogleSignInButton
+                            actionLabel="Sign up with Google"
+                            onErrorMessage={(msg) => setError(msg)}
                         />
                     </div>
 

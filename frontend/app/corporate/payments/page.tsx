@@ -5,7 +5,8 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/Card";
 import { paymentService } from "@/services/payment.service";
 import { Payment } from "@/types";
-import { ShieldCheck, XCircle, Clock, RefreshCcw } from "lucide-react";
+import { ShieldCheck, XCircle, Clock, RefreshCcw, HardHat, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 const getPaymentBadge = (status: string) => {
     switch (status) {
@@ -22,24 +23,45 @@ const getPaymentBadge = (status: string) => {
         default:
             return <span className="inline-flex items-center rounded-full bg-slate-50 px-2 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-600/20">{status}</span>;
     }
-}
+};
 
 export default function BuyerPaymentsHistory() {
     const [payments, setPayments] = useState<Payment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
+    const fetchPayments = () => {
+        setIsLoading(true);
         paymentService.getBuyerPayments()
             .then(setPayments)
             .finally(() => setIsLoading(false));
+    };
+
+    useEffect(() => {
+        fetchPayments();
     }, []);
 
     return (
         <DashboardLayout>
             <div className="space-y-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Payment History</h1>
-                    <p className="text-sm text-slate-500 mt-1">Track your past deposits and escrow transactions securely.</p>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900">Payment History</h1>
+                        <p className="text-sm text-slate-500 mt-1">Track your past deposits and escrow transactions securely.</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={fetchPayments} disabled={isLoading} className="gap-2">
+                        <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} /> Refresh
+                    </Button>
+                </div>
+
+                {/* Status Notice */}
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+                    <HardHat size={20} className="text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                        <h4 className="text-sm font-semibold text-amber-900">Payment & Escrow APIs Pending Backend Integration</h4>
+                        <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                            Razorpay payment orders and verification endpoints (<code>POST /api/payments/orders</code>, <code>POST /api/payments/verify</code>, <code>GET /api/payments</code>) are scheduled for the next backend phase. Transactions will appear here once enabled.
+                        </p>
+                    </div>
                 </div>
 
                 <Card>

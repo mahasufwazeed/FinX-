@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/Input";
 import Link from "next/link";
 import { ShieldCheck, CheckCircle2 } from "lucide-react";
 import axios from "axios";
-import { GoogleLogin } from "@react-oauth/google";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 const loginSchema = z.object({
     email: z.string().trim().min(1, { message: "Email is required." }).email({ message: "Enter a valid email address." }),
@@ -160,19 +160,10 @@ export default function LoginPage() {
                         <span className="w-full border-t border-slate-200"></span>
                     </div>
 
-                    <div className="mt-6 flex justify-center">
-                        <GoogleLogin
-                            onSuccess={async (credentialResponse) => {
-                                try {
-                                    if (credentialResponse.credential) {
-                                        await googleLogin(credentialResponse.credential);
-                                    }
-                                } catch (e) {
-                                    setError("Google Sign In failed.");
-                                }
-                            }}
-                            onError={() => setError("Google Sign In failed.")}
-                            useOneTap
+                    <div className="mt-6">
+                        <GoogleSignInButton
+                            actionLabel="Sign in with Google"
+                            onErrorMessage={(msg) => setError(msg)}
                         />
                     </div>
 

@@ -54,16 +54,24 @@ api.interceptors.response.use(
                     throw new Error("No refresh token");
                 }
 
-                const { data } = await axios.post(`${API_URL}/auth/refresh`, {
+                const res = await axios.post(`${API_URL}/auth/refresh`, {
                     refreshToken,
                 });
 
-                localStorage.setItem("accessToken", data.accessToken);
-                if (data.refreshToken) {
-                    localStorage.setItem("refreshToken", data.refreshToken);
+                const payload = res.data?.data || res.data;
+                const newAccessToken = payload?.accessToken;
+                const newRefreshToken = payload?.refreshToken;
+
+                if (!newAccessToken) {
+                    throw new Error("Invalid token refresh payload");
                 }
 
-                originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+                localStorage.setItem("accessToken", newAccessToken);
+                if (newRefreshToken) {
+                    localStorage.setItem("refreshToken", newRefreshToken);
+                }
+
+                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
                 return api(originalRequest);
             } catch (err) {
                 // Refresh failed, logout user

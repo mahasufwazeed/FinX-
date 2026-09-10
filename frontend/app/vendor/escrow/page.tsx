@@ -3,32 +3,61 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/Card";
-import { Briefcase, ShieldCheck, Clock } from "lucide-react";
-import { milestoneService } from "@/services/milestone.service";
-import { Milestone } from "@/types";
-import { MilestoneStatusBadge } from "@/components/ui/MilestoneStatusBadge";
+import { Briefcase, ShieldCheck, Clock, RefreshCw, AlertCircle, HardHat, ArrowRight } from "lucide-react";
+import { dealService } from "@/services/deal.service";
+import { Deal } from "@/types";
+import Link from "next/link";
+import { Button } from "@/components/ui/Button";
 
 export default function VendorEscrowDashboard() {
-    const [milestones, setMilestones] = useState<Milestone[]>([]);
+    const [deals, setDeals] = useState<Deal[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchDeals = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const data = await dealService.getDeals();
+            setDeals(data);
+        } catch (err: any) {
+            setError(err?.response?.data?.message || err.message || "Failed to fetch deals");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        // Mimics reading all global assigned milestones for this vendor via the new proxy logic
-        milestoneService.getAllMilestones()
-            .then(setMilestones)
-            .finally(() => setIsLoading(false));
+        fetchDeals();
     }, []);
 
-    const totalEarned = milestones.filter(m => m.status === 'RELEASED').reduce((sum, m) => sum + m.amount, 0);
-    const amountHeld = milestones.filter(m => m.status !== 'RELEASED' && m.status !== 'PENDING').reduce((sum, m) => sum + m.amount, 0);
-    const awaitingRelease = milestones.filter(m => m.status === 'APPROVED' || m.status === 'RELEASE_PENDING').reduce((sum, m) => sum + m.amount, 0);
+    const totalDeals = deals.length;
+    const activeDeals = deals.filter(d => d.status === 'ACTIVE').length;
+    const totalValue = deals.reduce((sum, d) => sum + (d.totalAmount || 0), 0);
+    const activeValue = deals.filter(d => d.status === 'ACTIVE').reduce((sum, d) => sum + (d.totalAmount || 0), 0);
 
     return (
         <DashboardLayout>
             <div className="space-y-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Vendor Income & Escrow</h1>
-                    <p className="text-sm text-slate-500 mt-1">Track funds securely held in escrow, pending approval, and released.</p>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900">Vendor Escrow & Earnings</h1>
+                        <p className="text-sm text-slate-500 mt-1">Track funds securely committed across your active assignments.</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={fetchDeals} disabled={isLoading} className="gap-2">
+                        <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} /> Refresh
+                    </Button>
+                </div>
+
+                {/* API Status Notice */}
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+                    <HardHat size={20} className="text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                        <h4 className="text-sm font-semibold text-amber-900">Escrow Payout Engine Pending Backend Integration</h4>
+                        <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                            Automated banking sweep and escrow release verification (<code>POST /api/escrow/&#123;id&#125;/release</code>) are scheduled for subsequent backend milestones. Currently displaying real contract commitments from your assigned deals.
+                        </p>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -36,21 +65,8 @@ export default function VendorEscrowDashboard() {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-slate-500">Released (Total Earned)</p>
-                                    <p className="text-3xl font-bold text-emerald-600 mt-2">${totalEarned.toLocaleString()}</p>
-                                </div>
-                                <div className="h-12 w-12 bg-emerald-50 flex items-center justify-center rounded-full text-emerald-600">
-                                    <ShieldCheck size={24} />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-slate-500">In Progress (Held in Escrow)</p>
-                                    <p className="text-3xl font-bold text-slate-900 mt-2">${amountHeld.toLocaleString()}</p>
+                                    <p className="text-sm font-medium text-slate-500">Total Assigned Value</p>
+                                    <p className="text-3xl font-bold text-slate-900 mt-2">${totalValue.toLocaleString()}</p>
                                 </div>
                                 <div className="h-12 w-12 bg-blue-50 flex items-center justify-center rounded-full text-blue-600">
                                     <Briefcase size={24} />
@@ -62,8 +78,21 @@ export default function VendorEscrowDashboard() {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-slate-500">Awaiting Auto-Release</p>
-                                    <p className="text-3xl font-bold text-amber-600 mt-2">${awaitingRelease.toLocaleString()}</p>
+                                    <p className="text-sm font-medium text-slate-500">Active Escrow Deals</p>
+                                    <p className="text-3xl font-bold text-emerald-600 mt-2">${activeValue.toLocaleString()}</p>
+                                </div>
+                                <div className="h-12 w-12 bg-emerald-50 flex items-center justify-center rounded-full text-emerald-600">
+                                    <ShieldCheck size={24} />
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-medium text-slate-500">Total Deals</p>
+                                    <p className="text-3xl font-bold text-amber-600 mt-2">{totalDeals} <span className="text-sm font-normal text-slate-500">({activeDeals} active)</span></p>
                                 </div>
                                 <div className="h-12 w-12 bg-amber-50 flex items-center justify-center rounded-full text-amber-600">
                                     <Clock size={24} />
@@ -73,33 +102,53 @@ export default function VendorEscrowDashboard() {
                     </Card>
                 </div>
 
-                <h2 className="text-lg font-semibold text-slate-900 mt-8 mb-4">Milestone Vault Ledgers</h2>
+                <h2 className="text-lg font-semibold text-slate-900 mt-8 mb-4">Assigned Escrow Vaults</h2>
                 <Card>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
                             <thead className="bg-slate-50 border-b border-slate-200">
                                 <tr>
-                                    <th className="p-4 font-semibold text-slate-600">Milestone</th>
-                                    <th className="p-4 font-semibold text-slate-600">Amount</th>
-                                    <th className="p-4 font-semibold text-slate-600">Current Status</th>
-                                    <th className="p-4 font-semibold text-slate-600">Expected Release</th>
+                                    <th className="p-4 font-semibold text-slate-600">Deal Title</th>
+                                    <th className="p-4 font-semibold text-slate-600">Committed Amount</th>
+                                    <th className="p-4 font-semibold text-slate-600">Status</th>
+                                    <th className="p-4 font-semibold text-slate-600 text-right">Action</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {isLoading && <tr><td colSpan={4} className="p-8 text-center text-slate-500">Loading ledger...</td></tr>}
-                                {!isLoading && milestones.map(m => (
-                                    <tr key={m.id} className="hover:bg-slate-50 transition-colors">
-                                        <td className="p-4 font-medium text-slate-900">{m.title}</td>
-                                        <td className="p-4 font-semibold text-slate-700">${m.amount.toLocaleString()} {m.currency}</td>
-                                        <td className="p-4"><MilestoneStatusBadge status={m.status} /></td>
-                                        <td className="p-4 text-slate-500">
-                                            {m.status === 'RELEASED' ? (
-                                                <span className="text-emerald-600 font-medium">Released to Bank</span>
-                                            ) : m.status === 'APPROVED' ? (
-                                                <span className="text-amber-600 font-medium">Pending Admin Sweep</span>
-                                            ) : (
-                                                "Pending Approvals"
-                                            )}
+                                {error && (
+                                    <tr>
+                                        <td colSpan={4} className="p-6 text-center text-red-600">
+                                            <p>{error}</p>
+                                            <Button variant="outline" size="sm" className="mt-2" onClick={fetchDeals}>Try Again</Button>
+                                        </td>
+                                    </tr>
+                                )}
+                                {isLoading && (
+                                    <tr><td colSpan={4} className="p-8 text-center text-slate-500">Loading escrow records...</td></tr>
+                                )}
+                                {!error && !isLoading && deals.length === 0 && (
+                                    <tr><td colSpan={4} className="p-8 text-center text-slate-500">No deals assigned to your account.</td></tr>
+                                )}
+                                {!error && !isLoading && deals.map(deal => (
+                                    <tr key={deal.id} className="hover:bg-slate-50 transition-colors">
+                                        <td className="p-4">
+                                            <p className="font-semibold text-slate-900">{deal.title}</p>
+                                            <p className="text-xs font-mono text-slate-400 mt-0.5">ID: {deal.id}</p>
+                                        </td>
+                                        <td className="p-4 font-semibold text-slate-700">
+                                            ${deal.totalAmount?.toLocaleString()} {deal.currency}
+                                        </td>
+                                        <td className="p-4">
+                                            <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-slate-100 text-slate-700">
+                                                {deal.status.replace("_", " ")}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 text-right">
+                                            <Link href={`/vendor/projects/${deal.id}`}>
+                                                <Button variant="outline" size="sm" className="gap-1.5 h-8">
+                                                    View Deal <ArrowRight size={14} />
+                                                </Button>
+                                            </Link>
                                         </td>
                                     </tr>
                                 ))}

@@ -115,4 +115,72 @@ public class DealService {
                 .map(DealResponse::fromEntity)
                 .collect(Collectors.toList());
     }
+
+    @Transactional(readOnly = true)
+    public List<com.finx.auth.dto.response.UserSummaryResponse> getAvailableSellers() {
+        return userRepository.findByRole(Role.SELLER).stream()
+                .map(com.finx.auth.dto.response.UserSummaryResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public DealResponse acceptDeal(UUID id, UserPrincipal currentUser) {
+        Deal deal = dealRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Deal", "id", id));
+
+        if (currentUser != null && currentUser.getRole() != Role.ADMIN && !deal.getSellerId().equals(currentUser.getId())) {
+            throw new BadRequestException("Only the assigned seller can accept this deal");
+        }
+
+        if (deal.getStatus() != DealStatus.DRAFT && deal.getStatus() != DealStatus.PENDING_ACCEPTANCE) {
+            throw new BadRequestException("Deal cannot be accepted from status: " + deal.getStatus());
+        }
+
+        deal.setStatus(DealStatus.ACTIVE);
+        Deal updated = dealRepository.saveAndFlush(deal);
+
+        UUID actorId = currentUser != null ? currentUser.getId() : deal.getSellerId();
+        auditService.logEvent(
+                actorId,
+                "DEAL_ACCEPTED",
+                "DEAL",
+                updated.getId().toString(),
+                "Deal accepted and activated by seller: " + updated.getTitle()
+        );
+
+        log.info("Deal accepted and activated: id={} actor={}", updated.getId(), actorId);
+        return DealResponse.fromEntity(updated);
+    }
+
+    @Transactional
+    public DealResponse cancelDeal(UUID id, UserPrincipal currentUser) {
+        Deal deal = dealRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Deal", "id", id));
+
+        if (currentUser != null && currentUser.getRole() != Role.ADMIN) {
+            boolean isParty = deal.getBuyerId().equals(currentUser.getId()) || deal.getSellerId().equals(currentUser.getId());
+            if (!isParty) {
+                throw new BadRequestException("Only parties associated with this deal can cancel it");
+            }
+        }
+
+        if (deal.getStatus() == DealStatus.COMPLETED || deal.getStatus() == DealStatus.CANCELLED) {
+            throw new BadRequestException("Deal cannot be cancelled from status: " + deal.getStatus());
+        }
+
+        deal.setStatus(DealStatus.CANCELLED);
+        Deal updated = dealRepository.saveAndFlush(deal);
+
+        UUID actorId = currentUser != null ? currentUser.getId() : deal.getBuyerId();
+        auditService.logEvent(
+                actorId,
+                "DEAL_CANCELLED",
+                "DEAL",
+                updated.getId().toString(),
+                "Deal cancelled: " + updated.getTitle()
+        );
+
+        log.info("Deal cancelled: id={} actor={}", updated.getId(), actorId);
+        return DealResponse.fromEntity(updated);
+    }
 }

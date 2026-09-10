@@ -1,6 +1,16 @@
 import { api } from '@/lib/api';
 import { Payment } from '@/types';
 
+export const PAYMENT_API_DISABLED_MSG = "Payment and Razorpay Escrow APIs are not yet implemented on the backend.";
+
+export interface CreatePaymentOrderResponse {
+    keyId: string;
+    orderId: string;
+    amount: number;
+    currency: string;
+    paymentId: string;
+}
+
 export interface VerifyPaymentPayload {
     paymentId: string;
     razorpayOrderId: string;
@@ -9,34 +19,27 @@ export interface VerifyPaymentPayload {
 }
 
 export const paymentService = {
-    createPaymentOrder: async (projectId: string, milestoneId: string) => {
-        const { data } = await api.post('/payments/orders', { projectId, milestoneId });
-        return data;
+    createPaymentOrder: async (projectId: string, milestoneId: string): Promise<CreatePaymentOrderResponse> => {
+        return Promise.reject(new Error(PAYMENT_API_DISABLED_MSG));
     },
 
-    verifyPayment: async (payload: VerifyPaymentPayload) => {
-        const { data } = await api.post('/payments/verify', payload);
-        return data;
+    verifyPayment: async (payload: VerifyPaymentPayload): Promise<any> => {
+        return Promise.reject(new Error(PAYMENT_API_DISABLED_MSG));
     },
 
     getPaymentById: async (paymentId: string): Promise<Payment> => {
-        const { data } = await api.get(`/payments/${paymentId}`);
-        return data;
+        return Promise.reject(new Error(PAYMENT_API_DISABLED_MSG));
     },
 
     getProjectPayments: async (projectId: string): Promise<Payment[]> => {
-        // Our mock backend aggregates all for the buyer right now, so we map it
-        const { data } = await api.get('/payments');
-        return data.filter((p: Payment) => p.projectId === projectId);
+        return [];
     },
 
     getBuyerPayments: async (): Promise<Payment[]> => {
-        const { data } = await api.get('/payments');
-        return data;
+        return [];
     },
 
     getPaymentStatus: async (paymentId: string): Promise<string> => {
-        const payment = await paymentService.getPaymentById(paymentId);
-        return payment.status;
+        return "NOT_CONFIGURED";
     }
 };

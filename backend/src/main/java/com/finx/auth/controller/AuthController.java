@@ -19,15 +19,30 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import com.finx.auth.config.GoogleOAuthProperties;
+import com.finx.auth.dto.request.GoogleOAuthRequest;
+import com.finx.auth.dto.response.GoogleOAuthConfigResponse;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "Authentication", description = "Endpoints for user registration, authentication, token refresh, and profile retrieval")
 public class AuthController {
 
     private final AuthService authService;
+    private final GoogleOAuthProperties googleOAuthProperties;
 
     public AuthController(AuthService authService) {
+        this(authService, new GoogleOAuthProperties());
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public AuthController(AuthService authService, GoogleOAuthProperties googleOAuthProperties) {
         this.authService = authService;
+        this.googleOAuthProperties = googleOAuthProperties;
     }
 
     @PostMapping("/register")
@@ -73,6 +88,83 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> logout(@Valid @RequestBody LogoutRequest request) {
         authService.logout(request);
         return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));
+    }
+
+    @GetMapping({"/oauth/google/config", "/google/config"})
+    @Operation(summary = "Get Google OAuth configuration status", description = "Check if Google OAuth is configured and get the public client ID.")
+    public ResponseEntity<ApiResponse<GoogleOAuthConfigResponse>> getGoogleOAuthConfig() {
+        GoogleOAuthConfigResponse response = authService.getGoogleOAuthConfig();
+        return ResponseEntity.ok(ApiResponse.success("OAuth configuration retrieved", response));
+    }
+
+    @PostMapping({"/oauth/google", "/google"})
+    @Operation(summary = "Authenticate with Google OAuth code", description = "Exchange Google authorization code for FINX JWT access and refresh tokens.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Google authentication successful"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid code or unverified email")
+    })
+    public ResponseEntity<ApiResponse<AuthResponse>> authenticateWithGoogle(@Valid @RequestBody GoogleOAuthRequest request) {
+        AuthResponse response = authService.authenticateWithGoogle(request);
+        return ResponseEntity.ok(ApiResponse.success("Google authentication successful", response));
+    }
+
+    @GetMapping({"/google/login", "/oauth/google/login"})
+    @Operation(summary = "Redirect to Google OAuth consent", description = "Initiates Google OAuth 2.0 flow by redirecting to Google.")
+    public void redirectToGoogleOAuth(HttpServletResponse response) throws IOException {
+        if (!googleOAuthProperties.isConfigured()) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Google OAuth is not configured on the server.");
+            return;
+        }
+        String googleAuthUrl = "https://accounts.google.com/o/oauth2/v2/auth" +
+                "?client_id=" + URLEncoder.encode(googleOAuthProperties.getClientId(), StandardCharsets.UTF_8) +
+                "&redirect_uri=" + URLEncoder.encode(googleOAuthProperties.getRedirectUri(), StandardCharsets.UTF_8) +
+                "&response_type=code" +
+                "&scope=" + URLEncoder.encode("openid email profile", StandardCharsets.UTF_8) +
+                "&access_type=offline" +
+                "&prompt=select_account";
+        response.sendRedirect(googleAuthUrl);
+    }
+
+    @GetMapping({"/google/callback", "/oauth/google/callback"})
+    @Operation(summary = "Google OAuth callback", description = "Callback endpoint for Google to redirect after user authentication.")
+    public void handleGoogleCallback(
+            @RequestParam(value = "code", required = false) String code,
+            @RequestParam(value = "state", required = false) String state,
+            @RequestParam(value = "error", required = false) String error,
+            @RequestParam(value = "error_description", required = false) String errorDescription,
+            HttpServletResponse response) throws IOException {
+
+        String frontendRedirect = googleOAuthProperties.getFrontendRedirectUrl();
+        if (frontendRedirect == null || frontendRedirect.trim().isEmpty()) {
+            frontendRedirect = "http://localhost:3000/auth/callback/google";
+        }
+
+        if (error != null && !error.trim().isEmpty()) {
+            response.sendRedirect(frontendRedirect + "?error=" + URLEncoder.encode(error, StandardCharsets.UTF_8) +
+                    (errorDescription != null ? "&error_description=" + URLEncoder.encode(errorDescription, StandardCharsets.UTF_8) : ""));
+            return;
+        }
+
+        if (code == null || code.trim().isEmpty()) {
+            response.sendRedirect(frontendRedirect + "?error=missing_code");
+            return;
+        }
+
+        try {
+            GoogleOAuthRequest authRequest = new GoogleOAuthRequest(code, googleOAuthProperties.getRedirectUri(), null);
+
+            AuthResponse authResponse = authService.authenticateWithGoogle(authRequest);
+
+            String roleStr = authResponse.getUser().getRole() != null ? authResponse.getUser().getRole().name() : "BUYER";
+            String targetUrl = frontendRedirect +
+                    "?accessToken=" + URLEncoder.encode(authResponse.getAccessToken(), StandardCharsets.UTF_8) +
+                    "&refreshToken=" + URLEncoder.encode(authResponse.getRefreshToken(), StandardCharsets.UTF_8) +
+                    "&role=" + URLEncoder.encode(roleStr, StandardCharsets.UTF_8);
+
+            response.sendRedirect(targetUrl);
+        } catch (Exception e) {
+            response.sendRedirect(frontendRedirect + "?error=" + URLEncoder.encode(e.getMessage() != null ? e.getMessage() : "OAuth authentication failed", StandardCharsets.UTF_8));
+        }
     }
 
     @GetMapping("/me")

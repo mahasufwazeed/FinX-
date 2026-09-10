@@ -7,8 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { dealService } from "@/services/deal.service";
 import { Deal } from "@/types";
-import { ArrowLeft, RefreshCw, AlertCircle, Calendar, DollarSign, User, ShieldCheck } from "lucide-react";
-import Link from "next/link";
+import { ArrowLeft, RefreshCw, AlertCircle, Calendar, DollarSign, User, ShieldCheck, XCircle, CheckCircle2 } from "lucide-react";
 
 export default function ProjectDetailsPage() {
     const params = useParams();
@@ -18,6 +17,9 @@ export default function ProjectDetailsPage() {
     const [deal, setDeal] = useState<Deal | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isCancelling, setIsCancelling] = useState(false);
+    const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+    const [actionError, setActionError] = useState<string | null>(null);
 
     const fetchDeal = async () => {
         setIsLoading(true);
@@ -38,6 +40,25 @@ export default function ProjectDetailsPage() {
         }
     }, [projectId]);
 
+    const handleCancelDeal = async () => {
+        if (!deal) return;
+        const confirm = window.confirm("Are you sure you want to cancel this deal? This action will mark the deal as CANCELLED.");
+        if (!confirm) return;
+
+        setIsCancelling(true);
+        setActionError(null);
+        setActionSuccess(null);
+        try {
+            const updated = await dealService.cancelDeal(deal.id);
+            setDeal(updated);
+            setActionSuccess("Deal cancelled successfully.");
+        } catch (err: any) {
+            setActionError(err?.response?.data?.message || err.message || "Failed to cancel deal");
+        } finally {
+            setIsCancelling(false);
+        }
+    };
+
     const StatusBadge = ({ status }: { status: string }) => {
         const styles: Record<string, string> = {
             DRAFT: "bg-gray-100 text-gray-700 border-gray-200",
@@ -55,6 +76,8 @@ export default function ProjectDetailsPage() {
         );
     };
 
+    const canCancel = deal && (deal.status === 'DRAFT' || deal.status === 'PENDING_ACCEPTANCE');
+
     return (
         <DashboardLayout>
             <div className="space-y-6 max-w-4xl">
@@ -70,6 +93,20 @@ export default function ProjectDetailsPage() {
                     </div>
                 )}
 
+                {actionSuccess && (
+                    <div className="p-4 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg flex items-center gap-3 text-sm">
+                        <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                        <p>{actionSuccess}</p>
+                    </div>
+                )}
+
+                {actionError && (
+                    <div className="p-4 bg-red-50 text-red-600 border border-red-200 rounded-lg flex items-center gap-3 text-sm">
+                        <AlertCircle size={18} className="text-red-500 shrink-0" />
+                        <p>{actionError}</p>
+                    </div>
+                )}
+
                 {!error && isLoading && (
                     <div className="p-24 text-center text-slate-500 flex flex-col items-center">
                         <RefreshCw size={32} className="animate-spin text-blue-500 mb-4" />
@@ -82,9 +119,23 @@ export default function ProjectDetailsPage() {
                         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                             <div>
                                 <h1 className="text-3xl font-bold text-slate-900">{deal.title}</h1>
-                                <p className="text-slate-500 mt-2">ID: {deal.id}</p>
+                                <p className="text-slate-500 mt-2 font-mono text-xs">ID: {deal.id}</p>
                             </div>
-                            <StatusBadge status={deal.status} />
+                            <div className="flex items-center gap-3">
+                                <StatusBadge status={deal.status} />
+                                {canCancel && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleCancelDeal}
+                                        disabled={isCancelling}
+                                        className="text-red-600 border-red-200 hover:bg-red-50 gap-1.5"
+                                    >
+                                        <XCircle size={15} />
+                                        {isCancelling ? "Cancelling..." : "Cancel Deal"}
+                                    </Button>
+                                )}
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -128,12 +179,12 @@ export default function ProjectDetailsPage() {
                                 </CardHeader>
                                 <CardContent className="pt-4 flex flex-col md:flex-row gap-8">
                                     <div className="flex-1">
-                                        <p className="text-sm font-medium text-slate-500 mb-1">Buyer ID</p>
-                                        <p className="text-sm text-slate-900 bg-slate-50 p-2 rounded border border-slate-100">{deal.buyerId}</p>
+                                        <p className="text-sm font-medium text-slate-500 mb-1">Buyer (You)</p>
+                                        <p className="text-xs font-mono text-slate-900 bg-slate-50 p-2.5 rounded border border-slate-200 select-all">{deal.buyerId}</p>
                                     </div>
                                     <div className="flex-1">
-                                        <p className="text-sm font-medium text-slate-500 mb-1">Seller ID</p>
-                                        <p className="text-sm text-slate-900 bg-slate-50 p-2 rounded border border-slate-100">{deal.sellerId}</p>
+                                        <p className="text-sm font-medium text-slate-500 mb-1">Seller (Vendor)</p>
+                                        <p className="text-xs font-mono text-slate-900 bg-slate-50 p-2.5 rounded border border-slate-200 select-all">{deal.sellerId}</p>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -154,7 +205,7 @@ export default function ProjectDetailsPage() {
                             <h2 className="text-lg font-semibold text-slate-900 mb-4">Milestones & Payments</h2>
                             <Card className="bg-slate-50 border-dashed border-2 border-slate-200">
                                 <CardContent className="p-8 text-center text-slate-500">
-                                    Feature currently unavailable. Milestone operations are not fully supported by the current backend deal APIs.
+                                    Milestone and Payment operations are scheduled for upcoming backend releases. Your deal is securely recorded and tracked in Spring Boot PostgreSQL.
                                 </CardContent>
                             </Card>
                         </div>

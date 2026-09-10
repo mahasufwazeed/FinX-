@@ -92,7 +92,7 @@ export const FINXSettings = () => {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
-                                <Input disabled value={user?.fullName || "User"} />
+                                <Input disabled value={user?.name || user?.fullName || "User"} />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>

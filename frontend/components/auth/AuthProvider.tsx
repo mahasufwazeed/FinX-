@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { User, Role } from "@/types";
 import { authService } from "@/services/auth.service";
 import { useRouter, usePathname } from "next/navigation";
@@ -9,8 +9,9 @@ interface AuthContextType {
     user: User | null;
     isLoading: boolean;
     login: (data: Record<string, string>) => Promise<void>;
-    register: (data: Record<string, string>) => Promise<void>;
-    googleLogin: (token: string) => Promise<void>;
+    register: (data: Record<string, any>) => Promise<void>;
+    googleLogin: (code: string) => Promise<void>;
+    setSession: (accessToken: string, refreshToken: string, user: User) => void;
     logout: () => void;
 }
 
@@ -22,16 +23,56 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const router = useRouter();
     const pathname = usePathname();
 
+    const redirectBasedOnRole = useCallback((role: Role) => {
+        if (role === "ADMIN") router.push("/admin");
+        else if (role === "FINANCE") router.push("/finance");
+        else if (role === "PROJECT_MANAGER") router.push("/project-manager");
+        else if (role === "VENDOR" || role === "SELLER") router.push("/vendor");
+        else router.push("/corporate");
+    }, [router]);
+
+    const setSession = useCallback((accessToken: string, refreshToken: string, userData: User) => {
+        const normalized: User = {
+            ...userData,
+            fullName: userData.name || userData.fullName || "User",
+            name: userData.name || userData.fullName || "User",
+        };
+        localStorage.setItem("accessToken", accessToken);
+        localStorage.setItem("refreshToken", refreshToken);
+        localStorage.setItem("user", JSON.stringify(normalized));
+        setUser(normalized);
+    }, []);
+
     useEffect(() => {
         const initAuth = async () => {
             const token = localStorage.getItem("accessToken");
             const storedUser = localStorage.getItem("user");
 
-            if (token && storedUser) {
+            if (token) {
+                if (storedUser) {
+                    try {
+                        const parsed = JSON.parse(storedUser);
+                        parsed.fullName = parsed.name || parsed.fullName || "User";
+                        parsed.name = parsed.name || parsed.fullName || "User";
+                        setUser(parsed);
+                    } catch (e) {
+                        console.error("Failed to parse stored user", e);
+                    }
+                }
+
+                // Verify session against backend /api/auth/me
                 try {
-                    setUser(JSON.parse(storedUser));
+                    const freshUser = await authService.getCurrentUser();
+                    freshUser.fullName = freshUser.name || freshUser.fullName || "User";
+                    freshUser.name = freshUser.name || freshUser.fullName || "User";
+                    localStorage.setItem("user", JSON.stringify(freshUser));
+                    setUser(freshUser);
                 } catch (e) {
-                    console.error("Failed to parse user");
+                    console.warn("Session verification failed, clearing auth state");
+                    localStorage.removeItem("accessToken");
+                    localStorage.removeItem("refreshToken");
+                    localStorage.removeItem("user");
+                    setUser(null);
                 }
             }
             setIsLoading(false);
@@ -42,29 +83,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const login = async (credentials: Record<string, string>) => {
         const data = await authService.login(credentials);
-
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        setUser(data.user);
+        setSession(data.accessToken, data.refreshToken, data.user);
         redirectBasedOnRole(data.user.role);
     };
 
-    const register = async (userData: Record<string, string>) => {
+    const register = async (userData: Record<string, any>) => {
         const data = await authService.register(userData);
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        setUser(data.user);
+        setSession(data.accessToken, data.refreshToken, data.user);
         redirectBasedOnRole(data.user.role);
     };
 
-    const googleLogin = async (token: string) => {
-        const data = await authService.googleLogin(token);
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        setUser(data.user);
+    const googleLogin = async (code: string) => {
+        const data = await authService.googleLogin(code);
+        setSession(data.accessToken, data.refreshToken, data.user);
         redirectBasedOnRole(data.user.role);
     };
 
@@ -74,26 +105,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         router.push("/login");
     };
 
-    const redirectBasedOnRole = (role: Role) => {
-        if (role === "ADMIN") router.push("/admin");
-        else if (role === "FINANCE") router.push("/finance");
-        else if (role === "PROJECT_MANAGER") router.push("/project-manager");
-        else if (role === "VENDOR" || role === "SELLER") router.push("/vendor");
-        else router.push("/corporate");
-    };
-
     // Route guarding
     useEffect(() => {
         if (isLoading) return;
 
-        const isPublicRoute = ["/", "/login", "/register"].includes(pathname as string);
+        const isPublicRoute = ["/", "/login", "/register"].includes(pathname as string) ||
+            pathname?.startsWith("/auth/callback");
 
         if (!user && !isPublicRoute) {
             router.push("/login");
             return;
         }
 
-        if (user && isPublicRoute && pathname !== "/") {
+        if (user && isPublicRoute && pathname !== "/" && !pathname?.startsWith("/auth/callback")) {
             redirectBasedOnRole(user.role);
             return;
         }
@@ -113,10 +137,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
         }
 
-    }, [user, isLoading, pathname, router]);
+    }, [user, isLoading, pathname, router, redirectBasedOnRole]);
 
     return (
-        <AuthContext.Provider value={{ user, isLoading, login, register, googleLogin, logout }}>
+        <AuthContext.Provider value={{ user, isLoading, login, register, googleLogin, setSession, logout }}>
             {children}
         </AuthContext.Provider>
     );

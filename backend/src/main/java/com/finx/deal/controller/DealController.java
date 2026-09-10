@@ -41,11 +41,38 @@ public class DealController {
                 .body(ApiResponse.success("Deal created successfully", response));
     }
 
+    @GetMapping("/sellers")
+    @Operation(summary = "List Available Sellers", description = "Fetch all registered sellers available for deal initiation")
+    public ResponseEntity<ApiResponse<List<com.finx.auth.dto.response.UserSummaryResponse>>> getAvailableSellers() {
+        List<com.finx.auth.dto.response.UserSummaryResponse> sellers = dealService.getAvailableSellers();
+        return ResponseEntity.ok(ApiResponse.success("Sellers retrieved successfully", sellers));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get Deal by ID", description = "Fetch deal metadata and terms")
     public ResponseEntity<ApiResponse<DealResponse>> getDealById(@PathVariable UUID id) {
         DealResponse response = dealService.getDealById(id);
         return ResponseEntity.ok(ApiResponse.success("Deal fetched successfully", response));
+    }
+
+    @PatchMapping("/{id}/accept")
+    @Operation(summary = "Accept Deal", description = "Seller accepts the assigned deal, transitioning it to ACTIVE")
+    public ResponseEntity<ApiResponse<DealResponse>> acceptDeal(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        DealResponse response = dealService.acceptDeal(id, currentUser);
+        return ResponseEntity.ok(ApiResponse.success("Deal accepted successfully", response));
+    }
+
+    @PatchMapping("/{id}/cancel")
+    @Operation(summary = "Cancel Deal", description = "Cancel deal by buyer or seller")
+    public ResponseEntity<ApiResponse<DealResponse>> cancelDeal(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        DealResponse response = dealService.cancelDeal(id, currentUser);
+        return ResponseEntity.ok(ApiResponse.success("Deal cancelled successfully", response));
     }
 
     @GetMapping

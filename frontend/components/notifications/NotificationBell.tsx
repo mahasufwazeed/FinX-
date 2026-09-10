@@ -17,9 +17,6 @@ export function NotificationBell() {
 
     useEffect(() => {
         fetchNotifications();
-        // Polling as a fallback for real-time WebSockets
-        const interval = setInterval(fetchNotifications, 5000);
-        return () => clearInterval(interval);
     }, []);
 
     const unreadCount = notifications.filter(n => !n.isRead).length;

@@ -11,13 +11,26 @@ export interface Notification {
 
 export const notificationService = {
     getNotifications: async (): Promise<Notification[]> => {
-        const { data } = await api.get('/notifications');
-        return data;
+        try {
+            const { data } = await api.get('/notifications');
+            return data || [];
+        } catch {
+            // Notifications API not enabled on backend yet
+            return [];
+        }
     },
     markAsRead: async (id: string) => {
-        await api.patch(`/notifications/${id}/read`);
+        try {
+            await api.patch(`/notifications/${id}/read`);
+        } catch {
+            // No-op until backend notification service is enabled
+        }
     },
     markAllAsRead: async () => {
-        await api.patch('/notifications/read-all');
+        try {
+            await api.patch('/notifications/read-all');
+        } catch {
+            // No-op until backend notification service is enabled
+        }
     }
 };
