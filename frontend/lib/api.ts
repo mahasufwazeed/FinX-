@@ -1,13 +1,48 @@
 import axios from "axios";
 import { AuthResponse } from "@/types";
 
-let API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-if (API_URL && !API_URL.endsWith('/api') && !API_URL.includes('localhost')) {
-    API_URL = `${API_URL}/api`;
-}
+/**
+ * Dynamically resolves the API base URL.
+ * In a browser running on a public domain (e.g. finx-frontend.onrender.com),
+ * it ensures we NEVER accidentally call localhost:8080.
+ */
+export const getApiBaseUrl = (): string => {
+    let url = process.env.NEXT_PUBLIC_API_URL;
+
+    if (typeof window !== "undefined") {
+        const isLocalHost = 
+            window.location.hostname === "localhost" || 
+            window.location.hostname === "127.0.0.1";
+
+        if (!isLocalHost) {
+            // Running on public domain/Render
+            if (!url || url.includes("localhost") || url.includes("127.0.0.1")) {
+                url = "https://finx-backend.onrender.com/api";
+            }
+        } else {
+            // Running on local development
+            if (!url) {
+                url = "http://localhost:8080/api";
+            }
+        }
+    } else {
+        // Server-side rendering fallback
+        if (!url) {
+            url = "http://localhost:8080/api";
+        }
+    }
+
+    // Normalize: remove trailing slash, ensure ends with /api
+    url = url.trim().replace(/\/+$/, "");
+    if (!url.endsWith("/api")) {
+        url = `${url}/api`;
+    }
+
+    return url;
+};
 
 export const api = axios.create({
-    baseURL: API_URL,
+    baseURL: getApiBaseUrl(),
     headers: {
         "Content-Type": "application/json",
     },
@@ -29,9 +64,10 @@ export const getRefreshToken = () => {
     return null;
 };
 
-// Request interceptor to attach token
+// Request interceptor to attach token and dynamic baseURL
 api.interceptors.request.use(
     (config) => {
+        config.baseURL = getApiBaseUrl();
         const token = getAccessToken();
         if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;
@@ -54,7 +90,8 @@ api.interceptors.response.use(
                     throw new Error("No refresh token");
                 }
 
-                const res = await axios.post(`${API_URL}/auth/refresh`, {
+                const currentApiUrl = getApiBaseUrl();
+                const res = await axios.post(`${currentApiUrl}/auth/refresh`, {
                     refreshToken,
                 });
 

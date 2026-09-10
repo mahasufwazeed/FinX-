@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { authService } from "@/services/auth.service";
-import { api } from "@/lib/api";
+import { api, getApiBaseUrl } from "@/lib/api";
 import { GoogleOAuthConfig } from "@/types";
 import { AlertTriangle, ExternalLink } from "lucide-react";
 
@@ -47,9 +47,18 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
         }
 
         setIsRedirecting(true);
-        const backendBase = api.defaults.baseURL || "http://localhost:8080/api";
+        const backendBase = getApiBaseUrl();
         const fallbackLoginUrl = `${backendBase}/auth/google/login`;
-        const loginUrl = config.authUrl || fallbackLoginUrl;
+        let loginUrl = config.authUrl || fallbackLoginUrl;
+
+        // Ensure public environment NEVER redirects to localhost
+        if (typeof window !== "undefined") {
+            const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+            if (!isLocal && loginUrl.includes("localhost:8080")) {
+                loginUrl = loginUrl.replace(/http:\/\/localhost:8080(\/api)?/, "https://finx-backend.onrender.com/api");
+            }
+        }
+
         window.location.href = loginUrl;
     };
 
@@ -95,7 +104,7 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
                     {showDetails && (
                         <div className="mt-1 pt-2 border-t border-amber-200 font-mono text-[11px] text-amber-900 bg-amber-100/50 p-2 rounded">
                             <p><strong>Required Backend Callback URI:</strong></p>
-                            <p className="select-all break-all">{config.redirectUri || `${api.defaults.baseURL || "http://localhost:8080/api"}/auth/google/callback`}</p>
+                            <p className="select-all break-all">{config.redirectUri || `${getApiBaseUrl()}/auth/google/callback`}</p>
                         </div>
                     )}
                 </div>

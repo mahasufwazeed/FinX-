@@ -32,6 +32,8 @@ import java.nio.charset.StandardCharsets;
 @Tag(name = "Authentication", description = "Endpoints for user registration, authentication, token refresh, and profile retrieval")
 public class AuthController {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AuthController.class);
+
     private final AuthService authService;
     private final GoogleOAuthProperties googleOAuthProperties;
 
@@ -112,11 +114,15 @@ public class AuthController {
     @Operation(summary = "Redirect to Google OAuth consent", description = "Initiates Google OAuth 2.0 flow by redirecting to Google.")
     public void redirectToGoogleOAuth(HttpServletResponse response) throws IOException {
         if (!googleOAuthProperties.isConfigured()) {
+            log.warn("[GOOGLE OAUTH] Redirect aborted: Google OAuth is not configured on the server.");
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Google OAuth is not configured on the server.");
             return;
         }
+        String redirectUri = googleOAuthProperties.getRedirectUri();
+        log.info("[GOOGLE OAUTH REDIRECT] Initiating authorization. Exact redirect_uri: '{}'", redirectUri);
         String googleAuthUrl = googleOAuthProperties.buildAuthorizationUrl();
         if (googleAuthUrl == null) {
+            log.error("[GOOGLE OAUTH] Failed to generate Google authorization URL for redirect_uri: '{}'", redirectUri);
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to generate Google authorization URL.");
             return;
         }
@@ -131,6 +137,11 @@ public class AuthController {
             @RequestParam(value = "error", required = false) String error,
             @RequestParam(value = "error_description", required = false) String errorDescription,
             HttpServletResponse response) throws IOException {
+
+        log.info("[GOOGLE OAUTH CALLBACK] Received callback from Google. Code present: {}, Error: '{}', Configured redirect_uri: '{}'",
+                (code != null && !code.isEmpty()),
+                (error != null ? error : "none"),
+                googleOAuthProperties.getRedirectUri());
 
         String frontendRedirect = googleOAuthProperties.getFrontendRedirectUrl();
         if (frontendRedirect == null || frontendRedirect.trim().isEmpty()) {

@@ -39,6 +39,18 @@ public class GoogleOAuthProperties {
             }
         }
 
+        String activeProfile = System.getProperty("spring.profiles.active", System.getenv("SPRING_PROFILES_ACTIVE"));
+        if (activeProfile != null && (activeProfile.contains("prod") || activeProfile.contains("production"))) {
+            if (this.redirectUri == null || this.redirectUri.trim().isEmpty() || this.redirectUri.contains("localhost")) {
+                this.redirectUri = "https://finx-backend.onrender.com/api/auth/google/callback";
+                log.info("[OAUTH CONFIGURATION] Production profile active: resolved redirectUri to Render: {}", this.redirectUri);
+            }
+            if (this.frontendRedirectUrl == null || this.frontendRedirectUrl.trim().isEmpty() || this.frontendRedirectUrl.contains("localhost")) {
+                this.frontendRedirectUrl = "https://finx-frontend.onrender.com/auth/callback/google";
+                log.info("[OAUTH CONFIGURATION] Production profile active: resolved frontendRedirectUrl to Render: {}", this.frontendRedirectUrl);
+            }
+        }
+
         if (!isConfigured()) {
             log.warn("================================================================================");
             log.warn("[OAUTH CONFIGURATION] Google OAuth 2.0 is NOT configured on this server.");
@@ -109,7 +121,11 @@ public class GoogleOAuthProperties {
     }
 
     public void setRedirectUri(String redirectUri) {
-        this.redirectUri = redirectUri;
+        if (redirectUri != null) {
+            this.redirectUri = redirectUri.trim().replaceAll("/+$", "");
+        } else {
+            this.redirectUri = null;
+        }
     }
 
     public String getFrontendRedirectUrl() {
@@ -117,6 +133,10 @@ public class GoogleOAuthProperties {
     }
 
     public void setFrontendRedirectUrl(String frontendRedirectUrl) {
-        this.frontendRedirectUrl = frontendRedirectUrl;
+        if (frontendRedirectUrl != null) {
+            this.frontendRedirectUrl = frontendRedirectUrl.trim().replaceAll("/+$", "");
+        } else {
+            this.frontendRedirectUrl = null;
+        }
     }
 }
