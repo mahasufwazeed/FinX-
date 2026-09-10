@@ -50,8 +50,11 @@ public class DealController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get Deal by ID", description = "Fetch deal metadata and terms")
-    public ResponseEntity<ApiResponse<DealResponse>> getDealById(@PathVariable UUID id) {
-        DealResponse response = dealService.getDealById(id);
+    public ResponseEntity<ApiResponse<DealResponse>> getDealById(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        DealResponse response = dealService.getDealById(id, currentUser);
         return ResponseEntity.ok(ApiResponse.success("Deal fetched successfully", response));
     }
 
@@ -79,7 +82,9 @@ public class DealController {
     @Operation(summary = "List My Deals", description = "Fetch all deals associated with the authenticated user")
     public ResponseEntity<ApiResponse<List<DealResponse>>> getMyDeals(@AuthenticationPrincipal UserPrincipal currentUser) {
         List<DealResponse> deals;
-        if (currentUser.getRole() == Role.SELLER) {
+        if (currentUser.getRole() == Role.ADMIN) {
+            deals = dealService.getAllDeals();
+        } else if (currentUser.getRole() == Role.SELLER) {
             deals = dealService.getDealsForSeller(currentUser.getId());
         } else {
             deals = dealService.getDealsForBuyer(currentUser.getId());

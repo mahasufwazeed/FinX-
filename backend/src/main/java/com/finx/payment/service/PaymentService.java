@@ -138,6 +138,10 @@ public class PaymentService {
         Payment payment = paymentRepository.findById(request.getPaymentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Payment", "id", request.getPaymentId()));
 
+        if (currentUser != null && currentUser.getRole() != Role.ADMIN && !payment.getBuyerId().equals(currentUser.getId())) {
+            throw new UnauthorizedException("Only the corporate buyer who initiated this payment can verify it");
+        }
+
         if (payment.getStatus() == PaymentStatus.SUCCESS) {
             log.warn("Payment {} was already verified and marked SUCCESS", payment.getId());
             return PaymentResponse.fromEntity(payment);

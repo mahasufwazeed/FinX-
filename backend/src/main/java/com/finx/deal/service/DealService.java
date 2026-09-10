@@ -9,6 +9,7 @@ import com.finx.deal.entity.DealStatus;
 import com.finx.deal.repository.DealRepository;
 import com.finx.exception.BadRequestException;
 import com.finx.exception.ResourceNotFoundException;
+import com.finx.exception.UnauthorizedException;
 import com.finx.security.service.UserPrincipal;
 import com.finx.user.entity.User;
 import com.finx.user.repository.UserRepository;
@@ -96,10 +97,30 @@ public class DealService {
     }
 
     @Transactional(readOnly = true)
-    public DealResponse getDealById(UUID id) {
+    public DealResponse getDealById(UUID id, UserPrincipal currentUser) {
         Deal deal = dealRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Deal", "id", id));
+
+        if (currentUser != null && currentUser.getRole() != Role.ADMIN) {
+            boolean isParty = deal.getBuyerId().equals(currentUser.getId()) || deal.getSellerId().equals(currentUser.getId());
+            if (!isParty) {
+                throw new UnauthorizedException("You are not authorized to view this deal");
+            }
+        }
+
         return DealResponse.fromEntity(deal);
+    }
+
+    @Transactional(readOnly = true)
+    public DealResponse getDealById(UUID id) {
+        return getDealById(id, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DealResponse> getAllDeals() {
+        return dealRepository.findAll().stream()
+                .map(DealResponse::fromEntity)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -129,7 +150,7 @@ public class DealService {
                 .orElseThrow(() -> new ResourceNotFoundException("Deal", "id", id));
 
         if (currentUser != null && currentUser.getRole() != Role.ADMIN && !deal.getSellerId().equals(currentUser.getId())) {
-            throw new BadRequestException("Only the assigned seller can accept this deal");
+            throw new UnauthorizedException("Only the assigned seller can accept this deal");
         }
 
         if (deal.getStatus() != DealStatus.DRAFT && deal.getStatus() != DealStatus.PENDING_ACCEPTANCE) {

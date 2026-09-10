@@ -89,6 +89,13 @@ public class DisputeService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<DisputeResponse> getAllDisputes() {
+        return disputeRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(DisputeResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public DisputeResponse resolveDispute(UUID disputeId, String resolutionNotes, UserPrincipal currentUser) {
         if (currentUser.getRole() != Role.ADMIN) {

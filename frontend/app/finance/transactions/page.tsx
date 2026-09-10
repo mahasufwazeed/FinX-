@@ -42,19 +42,21 @@ export default function FinanceTransactionsPage() {
                                 {!isLoading && txs.map((tx: any) => (
                                     <tr key={tx.id} className="hover:bg-slate-50">
                                         <td className="p-4 font-mono text-xs">
-                                            <span className="font-semibold text-slate-900 mb-1 block">{tx.id}</span>
-                                            <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded uppercase">{tx.type}</span>
+                                            <span className="font-semibold text-slate-900 mb-1 block truncate max-w-[200px]" title={tx.id}>{tx.id}</span>
+                                            <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded uppercase text-[10px] font-medium">{tx.provider || 'FIAT ESCROW'}</span>
                                         </td>
-                                        <td className="p-4 text-xs text-slate-500">{new Date(tx.date).toLocaleDateString()}</td>
-                                        <td className="p-4 font-bold text-slate-900">${tx.grossAmount.toLocaleString()}</td>
-                                        <td className="p-4 font-mono text-xs text-slate-400 border-l border-slate-100">
-                                            XXXXX{Math.floor(Math.random() * 9000) + 1000}
+                                        <td className="p-4 text-xs text-slate-500">{new Date(tx.createdAt || tx.date || Date.now()).toLocaleDateString()}</td>
+                                        <td className="p-4 font-bold text-slate-900">{tx.currency || 'USD'} {Number(tx.amount || tx.grossAmount || 0).toLocaleString()}</td>
+                                        <td className="p-4 font-mono text-xs text-slate-500 border-l border-slate-100 truncate max-w-[180px]">
+                                            {tx.providerOrderId || tx.providerPaymentId || 'ESCROW-LEDGER'}
                                         </td>
                                         <td className="p-4 text-right">
-                                            {tx.status === 'PAYMENT_SUCCESS' ? (
+                                            {tx.status === 'SUCCESS' || tx.status === 'PAYMENT_SUCCESS' ? (
                                                 <span className="text-emerald-600 font-medium">COMPLETED</span>
+                                            ) : tx.status === 'FAILED' ? (
+                                                <span className="text-rose-600 font-medium">FAILED</span>
                                             ) : (
-                                                <span className="text-amber-600 font-medium">{tx.status}</span>
+                                                <span className="text-amber-600 font-medium">{tx.status || 'PENDING'}</span>
                                             )}
                                         </td>
                                     </tr>

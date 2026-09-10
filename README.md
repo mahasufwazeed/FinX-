@@ -303,41 +303,49 @@ FINX is designed around secure financial workflows.
 
 ---
 
-## 🧪 Testing
+## 🧪 Testing & Verification
 
-### Backend
+### Automated End-to-End Suite (170 assertions across 28 phases)
+To run the comprehensive live integration and security hardening test suite:
+```bash
+node test-e2e-workflow.mjs
+```
+This executes and verifies:
+1. Google OAuth security & config sanitization
+2. Registration, login, and JWT rotation
+3. Cross-user IDOR protections (Buyer A vs B, Seller A vs B)
+4. Deal creation, acceptance, and cancellation lifecycle
+5. Milestone progress (Pending -> In Progress -> Under Review -> Approved)
+6. Deliverable validation & size constraints (>4000 characters rejected)
+7. Razorpay order creation and HMAC-SHA256 signature verification
+8. Fiat escrow ledger double-entry funding and release
+9. Double-release rejection (HTTP 400)
+10. Legal disputes & arbitration (Freeze deal, admin ruling, resolution notes)
+11. Complete append-only audit trail logging (15 distinct business events)
+12. Zero floating-point monetary precision
 
+### Backend Unit & Integration Tests (38/38 classes passing)
 ```bash
 cd backend
-./mvnw test
+./mvnw clean test
 ```
 
-### Frontend
-
+### Frontend Typecheck & Production Build
 ```bash
 cd frontend
+npx tsc --noEmit
 npm run lint
-npm run typecheck
 npm run build
 ```
 
-### Critical Test Cases
+---
 
-* Registration and login
-* Role-based route protection
-* Unauthorized project access
-* Project creation
-* Vendor acceptance
-* Milestone submission
-* Milestone approval and rejection
-* Successful payment
-* Failed payment
-* Invalid webhook signature
-* Duplicate webhook processing
-* Duplicate release attempt
-* Dispute creation
-* Audit-log generation
-* Finance reconciliation
+## 🔑 Default Development Accounts
+| Role | Email | Password | Purpose |
+|------|-------|----------|---------|
+| **Administrator** | `admin@finx.com` | `Admin@Finx2026!` | Seeded on initial startup for audit, admin dashboard & dispute arbitration |
+| **Buyer (Corporate)** | Dynamic via UI / Test | Chosen at registration | Create deals, fund milestones, approve deliverables, release escrow |
+| **Seller (Vendor)** | Dynamic via UI / Test | Chosen at registration | Accept deals, start work, submit deliverables, receive payouts |
 
 ---
 

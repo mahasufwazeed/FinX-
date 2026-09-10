@@ -14,6 +14,12 @@ export const disputeService = {
         return data;
     },
 
+    getAllDisputes: async (): Promise<Dispute[]> => {
+        const response = await api.get<ApiResponse<Dispute[]> | Dispute[]>("/disputes");
+        const data = (response.data as ApiResponse<Dispute[]>)?.data || (response.data as Dispute[]);
+        return data || [];
+    },
+
     getDisputesForDeal: async (dealId: string): Promise<Dispute[]> => {
         const response = await api.get<ApiResponse<Dispute[]> | Dispute[]>(`/disputes/deal/${dealId}`);
         const data = (response.data as ApiResponse<Dispute[]>)?.data || (response.data as Dispute[]);

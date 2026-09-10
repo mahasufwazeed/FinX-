@@ -29,6 +29,12 @@ public class DisputeController {
     public DisputeController(DisputeService disputeService) {
         this.disputeService = disputeService;
     }
+    @GetMapping
+    @Operation(summary = "Get all disputes", description = "Retrieves all system disputes for administrative oversight")
+    public ResponseEntity<ApiResponse<List<DisputeResponse>>> getAllDisputes() {
+        List<DisputeResponse> disputes = disputeService.getAllDisputes();
+        return ResponseEntity.ok(ApiResponse.success(disputes));
+    }
 
     @PostMapping
     @Operation(summary = "Raise a dispute", description = "Allows a participant or admin to raise a dispute on a deal")

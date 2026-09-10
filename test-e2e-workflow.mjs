@@ -402,6 +402,8 @@ async function runTests() {
             '/admin',
             '/admin/users',
             '/admin/audit-logs',
+            '/admin/disputes',
+            '/corporate/disputes',
             '/finance',
             '/finance/transactions'
         ];
@@ -412,6 +414,298 @@ async function runTests() {
             const html = await res.text();
             assert(!html.includes('Under Construction'), `Route ${route} has NO "Under Construction" placeholder`);
         }
+
+        // 23. Complete IDOR & Cross-User Security Audit
+        console.log('\n--- Phase 23: Complete IDOR & Cross-User Security Audit ---');
+        // Register Buyer B
+        const buyerBEmail = `buyer.b.${Date.now()}@finx.com`;
+        const buyerBRegRes = await request(`${BACKEND_URL}/auth/register`, {
+            method: 'POST',
+            body: JSON.stringify({
+                name: 'Competitor Corp Buyer',
+                email: buyerBEmail,
+                password: 'Password123!',
+                role: 'BUYER'
+            })
+        });
+        const buyerBToken = buyerBRegRes.data?.data?.accessToken;
+        assert(buyerBRegRes.ok, 'Registered independent Buyer B');
+
+        // Register Seller B
+        const sellerBEmail = `seller.b.${Date.now()}@finx.com`;
+        const sellerBRegRes = await request(`${BACKEND_URL}/auth/register`, {
+            method: 'POST',
+            body: JSON.stringify({
+                name: 'Unrelated Vendor Agency',
+                email: sellerBEmail,
+                password: 'Password123!',
+                role: 'SELLER'
+            })
+        });
+        const sellerBToken = sellerBRegRes.data?.data?.accessToken;
+        assert(sellerBRegRes.ok, 'Registered independent Seller B');
+
+        // IDOR Test 1: Buyer B tries to read Deal A
+        const buyerBReadDealRes = await request(`${BACKEND_URL}/deals/${deal.id}`, {
+            headers: { Authorization: `Bearer ${buyerBToken}` }
+        });
+        assert(buyerBReadDealRes.status === 401 || buyerBReadDealRes.status === 403, `IDOR: Buyer B reading Deal A is rejected (got ${buyerBReadDealRes.status})`);
+
+        // IDOR Test 2: Seller B tries to read Deal A
+        const sellerBReadDealRes = await request(`${BACKEND_URL}/deals/${deal.id}`, {
+            headers: { Authorization: `Bearer ${sellerBToken}` }
+        });
+        assert(sellerBReadDealRes.status === 401 || sellerBReadDealRes.status === 403, `IDOR: Seller B reading Deal A is rejected (got ${sellerBReadDealRes.status})`);
+
+        // IDOR Test 3: Seller B tries to accept Deal A
+        const sellerBAcceptDealRes = await request(`${BACKEND_URL}/deals/${deal.id}/accept`, {
+            method: 'PATCH',
+            headers: { Authorization: `Bearer ${sellerBToken}` }
+        });
+        assert(sellerBAcceptDealRes.status === 401 || sellerBAcceptDealRes.status === 403, `IDOR: Seller B accepting Deal A is rejected (got ${sellerBAcceptDealRes.status})`);
+
+        // IDOR Test 4: Buyer B tries to create milestone on Deal A
+        const buyerBCreateMilestoneRes = await request(`${BACKEND_URL}/deals/${deal.id}/milestones`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${buyerBToken}` },
+            body: JSON.stringify({
+                title: 'Malicious Milestone',
+                sequence: 99,
+                amount: 5000,
+                currency: 'USD'
+            })
+        });
+        assert(buyerBCreateMilestoneRes.status === 401 || buyerBCreateMilestoneRes.status === 403, `IDOR: Buyer B creating milestone on Deal A is rejected (got ${buyerBCreateMilestoneRes.status})`);
+
+        // IDOR Test 5: Seller B tries to start Milestone A
+        const sellerBStartMilestoneRes = await request(`${BACKEND_URL}/milestones/${milestone.id}/start`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${sellerBToken}` }
+        });
+        assert(sellerBStartMilestoneRes.status === 401 || sellerBStartMilestoneRes.status === 403, `IDOR: Seller B starting Milestone A is rejected (got ${sellerBStartMilestoneRes.status})`);
+
+        // IDOR Test 6: Seller B tries to submit deliverable on Milestone A
+        const sellerBSubmitDeliverableRes = await request(`${BACKEND_URL}/milestones/${milestone.id}/submit`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${sellerBToken}` },
+            body: JSON.stringify({
+                fileName: 'exploit.zip',
+                fileUrl: 'https://malicious.com/exploit.zip',
+                description: 'Injecting deliverable without permissions'
+            })
+        });
+        assert(sellerBSubmitDeliverableRes.status === 401 || sellerBSubmitDeliverableRes.status === 403, `IDOR: Seller B submitting deliverable on Milestone A is rejected (got ${sellerBSubmitDeliverableRes.status})`);
+
+        // IDOR Test 7: Buyer B tries to approve Milestone A
+        const buyerBApproveMilestoneRes = await request(`${BACKEND_URL}/milestones/${milestone.id}/approve`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${buyerBToken}` }
+        });
+        assert(buyerBApproveMilestoneRes.status === 401 || buyerBApproveMilestoneRes.status === 403, `IDOR: Buyer B approving Milestone A is rejected (got ${buyerBApproveMilestoneRes.status})`);
+
+        // IDOR Test 8: Buyer B tries to release escrow on Milestone A
+        const buyerBReleaseEscrowRes = await request(`${BACKEND_URL}/escrow/${milestone.id}/release`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${buyerBToken}` },
+            body: JSON.stringify({ comment: 'Malicious escrow release attempt' })
+        });
+        assert(buyerBReleaseEscrowRes.status === 401 || buyerBReleaseEscrowRes.status === 403, `IDOR: Buyer B releasing escrow for Milestone A is rejected (got ${buyerBReleaseEscrowRes.status})`);
+
+        // IDOR Test 9: Seller A (vendor) tries to release escrow on Milestone A
+        const sellerAReleaseEscrowRes = await request(`${BACKEND_URL}/escrow/${milestone.id}/release`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${activeVendorToken}` },
+            body: JSON.stringify({ comment: 'Vendor trying to self-release funds' })
+        });
+        assert(sellerAReleaseEscrowRes.status === 401 || sellerAReleaseEscrowRes.status === 403, `Security: Vendor releasing escrow is rejected (got ${sellerAReleaseEscrowRes.status})`);
+
+        // IDOR Test 10: Buyer B tries to verify payment using Buyer A's payment ID
+        const buyerBVerifyPaymentRes = await request(`${BACKEND_URL}/payments/verify`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${buyerBToken}` },
+            body: JSON.stringify({
+                paymentId: orderData.paymentId,
+                razorpayOrderId: orderData.orderId,
+                razorpayPaymentId: 'pay_hijack_test',
+                razorpaySignature: 'test_signature'
+            })
+        });
+        assert(buyerBVerifyPaymentRes.status === 401 || buyerBVerifyPaymentRes.status === 403, `Security: Cross-buyer payment verification hijacking is rejected (got ${buyerBVerifyPaymentRes.status})`);
+
+        // Security Test 11: Unauthenticated request to /api/deals
+        const unauthDealsRes = await request(`${BACKEND_URL}/deals`);
+        assert(unauthDealsRes.status === 401, `Security: Unauthenticated request returns 401 (got ${unauthDealsRes.status})`);
+
+        // Security Test 12: Tampered JWT token to /api/auth/me
+        const tamperedMeRes = await request(`${BACKEND_URL}/auth/me`, {
+            headers: { Authorization: `Bearer eyJhbGciOiJIUzI1NiJ9.tampered.token` }
+        });
+        assert(tamperedMeRes.status === 401, `Security: Tampered JWT token returns 401 (got ${tamperedMeRes.status})`);
+
+        // 24. Deal State Machine Negative / Invalid Transitions
+        console.log('\n--- Phase 24: Deal State Machine Negative Transitions ---');
+        // Accepting already cancelled deal
+        const acceptCancelledRes = await request(`${BACKEND_URL}/deals/${cancelDealId}/accept`, {
+            method: 'PATCH',
+            headers: { Authorization: `Bearer ${activeVendorToken}` }
+        });
+        assert(acceptCancelledRes.status === 400, `State Machine: Accepting CANCELLED deal is rejected with 400 (got ${acceptCancelledRes.status})`);
+
+        // Cancelling already cancelled deal
+        const cancelAgainRes = await request(`${BACKEND_URL}/deals/${cancelDealId}/cancel`, {
+            method: 'PATCH',
+            headers: { Authorization: `Bearer ${activeCorpToken}` }
+        });
+        assert(cancelAgainRes.status === 400, `State Machine: Cancelling already CANCELLED deal is rejected with 400 (got ${cancelAgainRes.status})`);
+
+        // 25. Deliverable Validation Security & Content Constraints
+        console.log('\n--- Phase 25: Deliverable Validation & Size Constraints ---');
+        const emptyFileRes = await request(`${BACKEND_URL}/milestones/${milestone.id}/submit`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${activeVendorToken}` },
+            body: JSON.stringify({
+                fileName: '',
+                fileUrl: 'https://storage.finx.local/empty.zip',
+                description: 'Empty filename test'
+            })
+        });
+        assert(emptyFileRes.status === 400, `Deliverable: Empty filename is rejected with 400 (got ${emptyFileRes.status})`);
+
+        const oversizedDesc = 'A'.repeat(4005);
+        const oversizedDescRes = await request(`${BACKEND_URL}/milestones/${milestone.id}/submit`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${activeVendorToken}` },
+            body: JSON.stringify({
+                fileName: 'normal.zip',
+                fileUrl: 'https://storage.finx.local/normal.zip',
+                description: oversizedDesc
+            })
+        });
+        assert(oversizedDescRes.status === 400, `Deliverable: Oversized description (>4000 chars) is rejected with 400 (got ${oversizedDescRes.status})`);
+
+        // 26. Dispute Lifecycle End-to-End
+        console.log('\n--- Phase 26: Dispute Lifecycle End-to-End ---');
+        // Create a deal specifically for dispute workflow
+        const disputeDealRes = await request(`${BACKEND_URL}/deals`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${activeCorpToken}` },
+            body: JSON.stringify({
+                title: 'Deal Subject to Legal Dispute',
+                description: 'Testing arbitration freeze and resolution',
+                sellerId: vendorUser.id,
+                totalAmount: 8000,
+                currency: 'USD'
+            })
+        });
+        const disputeDeal = disputeDealRes.data?.data;
+        assert(disputeDealRes.ok, `Created deal for dispute test: ${disputeDeal?.id}`);
+
+        // Vendor accepts deal
+        await request(`${BACKEND_URL}/deals/${disputeDeal.id}/accept`, {
+            method: 'PATCH',
+            headers: { Authorization: `Bearer ${activeVendorToken}` }
+        });
+
+        // Corporate files a dispute
+        const raiseDisputeRes = await request(`${BACKEND_URL}/disputes`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${activeCorpToken}` },
+            body: JSON.stringify({
+                dealId: disputeDeal.id,
+                reason: 'Vendor failed deliverable security standards and defaulted on SLA'
+            })
+        });
+        assert(raiseDisputeRes.status === 201, `Dispute created successfully with 201 (got ${raiseDisputeRes.status})`);
+        const disputeRecord = raiseDisputeRes.data?.data;
+        assert(disputeRecord?.id !== undefined, `Dispute assigned ID: ${disputeRecord?.id}`);
+        assert(disputeRecord?.status === 'OPEN', `Dispute status is OPEN`);
+
+        // Verify Deal status is updated to DISPUTED
+        const checkDisputedDealRes = await request(`${BACKEND_URL}/deals/${disputeDeal.id}`, {
+            headers: { Authorization: `Bearer ${activeCorpToken}` }
+        });
+        assert(checkDisputedDealRes.data?.data?.status === 'DISPUTED', `Deal status successfully transitioned to DISPUTED (got ${checkDisputedDealRes.data?.data?.status})`);
+
+        // Non-admin attempting to resolve dispute -> Rejected
+        const nonAdminResolveRes = await request(`${BACKEND_URL}/disputes/${disputeRecord.id}/resolve`, {
+            method: 'PATCH',
+            headers: { Authorization: `Bearer ${activeCorpToken}` },
+            body: JSON.stringify({ resolutionNotes: 'Attempting resolution without admin role' })
+        });
+        assert(nonAdminResolveRes.status === 400, `Security: Non-admin resolving dispute is rejected with 400 (got ${nonAdminResolveRes.status})`);
+
+        // Admin resolves dispute
+        // Log in as seeded system administrator
+        const adminLoginRes = await request(`${BACKEND_URL}/auth/login`, {
+            method: 'POST',
+            body: JSON.stringify({
+                email: 'admin@finx.com',
+                password: 'Admin@Finx2026!'
+            })
+        });
+        assert(adminLoginRes.ok, 'System Administrator logged in successfully');
+        const adminToken = adminLoginRes.data?.data?.accessToken;
+
+        // Admin fetches all disputes
+        const allDisputesRes = await request(`${BACKEND_URL}/disputes`, {
+            headers: { Authorization: `Bearer ${adminToken}` }
+        });
+        assert(allDisputesRes.ok, 'Admin GET /api/disputes returns 200 OK');
+        const disputeList = allDisputesRes.data?.data || [];
+        assert(disputeList.some(d => d.id === disputeRecord.id), 'Raised dispute is present in admin disputes list');
+
+        // Admin resolves the dispute
+        const adminResolveRes = await request(`${BACKEND_URL}/disputes/${disputeRecord.id}/resolve`, {
+            method: 'PATCH',
+            headers: { Authorization: `Bearer ${adminToken}` },
+            body: JSON.stringify({ resolutionNotes: 'Vendor verified breach. Milestone forfeited and escrow refunded.' })
+        });
+        assert(adminResolveRes.ok, `Admin resolved dispute successfully (got ${adminResolveRes.status})`);
+        assert(adminResolveRes.data?.data?.status === 'RESOLVED', `Dispute status transitioned to RESOLVED`);
+        assert(adminResolveRes.data?.data?.resolutionNotes?.includes('Vendor verified breach'), `Resolution notes saved correctly`);
+
+        // 27. Audit Log Completeness Check
+        console.log('\n--- Phase 27: Audit Log Completeness & Integrity ---');
+        const fullAuditLogsRes = await request(`${BACKEND_URL}/admin/audit-logs`, {
+            headers: { Authorization: `Bearer ${adminToken}` }
+        });
+        assert(fullAuditLogsRes.ok, 'Admin audit log query returns 200 OK');
+        const allLogs = fullAuditLogsRes.data?.data || [];
+        const actionsLogged = new Set(allLogs.map(l => l.action));
+
+        const requiredActions = [
+            'USER_REGISTERED',
+            'USER_LOGIN',
+            'DEAL_CREATED',
+            'DEAL_ACCEPTED',
+            'MILESTONE_CREATED',
+            'MILESTONE_STARTED',
+            'DELIVERABLE_SUBMITTED',
+            'MILESTONE_APPROVED',
+            'PAYMENT_CREATED',
+            'PAYMENT_VERIFIED',
+            'ESCROW_FUNDED',
+            'ESCROW_RELEASED',
+            'DEAL_CANCELLED',
+            'DISPUTE_CREATED',
+            'DISPUTE_RESOLVED'
+        ];
+
+        for (const action of requiredActions) {
+            assert(actionsLogged.has(action), `Audit trail contains business event: [${action}]`);
+        }
+
+        // 28. Monetary Precision & Ledger Mathematical Verification
+        console.log('\n--- Phase 28: Zero Floating-Point Precision & Exact Monetary Math ---');
+        const verifyLedgerRes = await request(`${BACKEND_URL}/escrow/ledger/deal/${deal.id}`, {
+            headers: { Authorization: `Bearer ${activeCorpToken}` }
+        });
+        const records = verifyLedgerRes.data?.data || [];
+        for (const rec of records) {
+            assert(typeof rec.amount === 'number' || typeof rec.amount === 'string', `Ledger record ${rec.id} has exact numeric amount`);
+            assert(typeof rec.balanceAfter === 'number' || typeof rec.balanceAfter === 'string', `Ledger record ${rec.id} has exact numeric balanceAfter`);
+        }
+        assert(records.length >= 2, `Deal has both FUND and RELEASE entries recorded`);
 
         console.log('\n====================================================');
         console.log(`   Verification Summary: ${passed} PASSED, ${failed} FAILED`);

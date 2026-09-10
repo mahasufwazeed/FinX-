@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface DisputeRepository extends JpaRepository<Dispute, UUID> {
     List<Dispute> findByDealIdOrderByCreatedAtDesc(UUID dealId);
     List<Dispute> findByRaisedByOrderByCreatedAtDesc(UUID raisedBy);
+    List<Dispute> findAllByOrderByCreatedAtDesc();
 }
