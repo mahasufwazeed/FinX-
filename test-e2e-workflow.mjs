@@ -200,8 +200,164 @@ async function runTests() {
         const acceptedDeal = acceptDealRes.data?.data;
         assert(acceptedDeal?.status === 'ACTIVE', `Deal status successfully transitioned to ACTIVE (got ${acceptedDeal?.status})`);
 
-        // 11. Test Cancel Deal Lifecycle
-        console.log('\n--- Phase 11: Deal Cancellation Flow ---');
+        // 11. Corporate Creates Milestone
+        console.log('\n--- Phase 11: Corporate Creates Milestone for Deal ---');
+        const createMilestoneRes = await request(`${BACKEND_URL}/deals/${deal.id}/milestones`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${activeCorpToken}` },
+            body: JSON.stringify({
+                title: 'Phase 1: Architecture & Infrastructure Setup',
+                description: 'Terraform cloud automation and Kubernetes cluster orchestration',
+                sequence: 1,
+                amount: 10000,
+                currency: 'USD',
+                dueDate: new Date(Date.now() + 7 * 86400000).toISOString()
+            })
+        });
+        assert(createMilestoneRes.ok, `Milestone created successfully (got ${createMilestoneRes.status})`);
+        const milestone = createMilestoneRes.data?.data;
+        assert(milestone?.id !== undefined, `Milestone assigned ID: ${milestone?.id}`);
+        assert(milestone?.status === 'PENDING', `Initial milestone status is PENDING (got ${milestone?.status})`);
+        assert(Number(milestone?.amount) === 10000, `Milestone amount is 10000 (got ${milestone?.amount})`);
+
+        // 12. Vendor Views & Starts Milestone
+        console.log('\n--- Phase 12: Vendor Starts Milestone ---');
+        const startMilestoneRes = await request(`${BACKEND_URL}/milestones/${milestone.id}/start`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${activeVendorToken}` }
+        });
+        assert(startMilestoneRes.ok, `Vendor started milestone returns 200 OK (got ${startMilestoneRes.status})`);
+        assert(startMilestoneRes.data?.data?.status === 'IN_PROGRESS', `Milestone status transitioned to IN_PROGRESS (got ${startMilestoneRes.data?.data?.status})`);
+
+        // 13. Vendor Submits Deliverable
+        console.log('\n--- Phase 13: Vendor Submits Deliverable ---');
+        const submitDeliverableRes = await request(`${BACKEND_URL}/milestones/${milestone.id}/submit`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${activeVendorToken}` },
+            body: JSON.stringify({
+                fileName: 'cloud_infra_architecture_v1.zip',
+                fileUrl: 'https://storage.finx.local/deliverables/cloud_infra_architecture_v1.zip',
+                description: 'Completed Terraform modules and Helm deployment configs'
+            })
+        });
+        assert(submitDeliverableRes.ok, `Deliverable submitted successfully (got ${submitDeliverableRes.status})`);
+        const deliverable = submitDeliverableRes.data?.data;
+        assert(deliverable?.id !== undefined, `Deliverable assigned ID: ${deliverable?.id}`);
+        assert(deliverable?.status === 'PENDING', `Deliverable status is PENDING`);
+
+        // Verify milestone status transitioned to UNDER_REVIEW
+        const reviewMilestoneRes = await request(`${BACKEND_URL}/milestones/${milestone.id}`, {
+            headers: { Authorization: `Bearer ${activeCorpToken}` }
+        });
+        assert(reviewMilestoneRes.ok, 'Fetch milestone details returns 200 OK');
+        assert(reviewMilestoneRes.data?.data?.status === 'UNDER_REVIEW', `Milestone status is UNDER_REVIEW (got ${reviewMilestoneRes.data?.data?.status})`);
+
+        // 14. Authorization Check: Vendor cannot approve own milestone
+        console.log('\n--- Phase 14: Security Authorization & Milestone Approval ---');
+        const vendorApproveRes = await request(`${BACKEND_URL}/milestones/${milestone.id}/approve`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${activeVendorToken}` }
+        });
+        assert(vendorApproveRes.status === 401, `Vendor approving own milestone is rejected with 401 (got ${vendorApproveRes.status})`);
+
+        // Corporate approves milestone
+        const corpApproveRes = await request(`${BACKEND_URL}/milestones/${milestone.id}/approve`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${activeCorpToken}` }
+        });
+        assert(corpApproveRes.ok, `Corporate milestone approval returns 200 OK (got ${corpApproveRes.status})`);
+        assert(corpApproveRes.data?.data?.status === 'APPROVED', `Milestone status transitioned to APPROVED (got ${corpApproveRes.data?.data?.status})`);
+
+        // 15. Corporate Initiates Razorpay Payment Order
+        console.log('\n--- Phase 15: Razorpay Payment Order Creation ---');
+        const paymentOrderRes = await request(`${BACKEND_URL}/payments/create-order`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${activeCorpToken}` },
+            body: JSON.stringify({
+                dealId: deal.id,
+                milestoneId: milestone.id,
+                idempotencyKey: `idemp_${Date.now()}`
+            })
+        });
+        assert(paymentOrderRes.ok, `Payment order created (got ${paymentOrderRes.status})`);
+        const orderData = paymentOrderRes.data?.data;
+        assert(orderData?.orderId !== undefined, `Razorpay order ID returned: ${orderData?.orderId}`);
+        assert(orderData?.paymentId !== undefined, `FINX payment ID returned: ${orderData?.paymentId}`);
+
+        // 16. Payment Verification & Cryptographic Signature Handling
+        console.log('\n--- Phase 16: Payment Verification & Escrow Funding ---');
+        const paymentTxnId = `pay_test_${Date.now()}`;
+        const verifyPaymentRes = await request(`${BACKEND_URL}/payments/verify`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${activeCorpToken}` },
+            body: JSON.stringify({
+                paymentId: orderData.paymentId,
+                razorpayOrderId: orderData.orderId,
+                razorpayPaymentId: paymentTxnId,
+                razorpaySignature: 'test_signature'
+            })
+        });
+        assert(verifyPaymentRes.ok, `Payment verified successfully (got ${verifyPaymentRes.status})`);
+        assert(verifyPaymentRes.data?.data?.status === 'SUCCESS', `Payment status marked SUCCESS (got ${verifyPaymentRes.data?.data?.status})`);
+
+        // 17. Escrow Account Balance & Ledger Audit
+        console.log('\n--- Phase 17: Escrow Balance & Ledger Verification ---');
+        const escrowBalanceRes = await request(`${BACKEND_URL}/escrow/deal/${deal.id}`, {
+            headers: { Authorization: `Bearer ${activeCorpToken}` }
+        });
+        assert(escrowBalanceRes.ok, 'GET escrow account returns 200 OK');
+        assert(Number(escrowBalanceRes.data?.data?.balance) === 10000, `Escrow balance is 10000 (got ${escrowBalanceRes.data?.data?.balance})`);
+
+        const escrowLedgerRes = await request(`${BACKEND_URL}/escrow/ledger/deal/${deal.id}`, {
+            headers: { Authorization: `Bearer ${activeCorpToken}` }
+        });
+        assert(escrowLedgerRes.ok, 'GET escrow ledger returns 200 OK');
+        const ledgerEntries = escrowLedgerRes.data?.data || [];
+        assert(ledgerEntries.length > 0, `Escrow ledger contains ${ledgerEntries.length} entries`);
+        assert(ledgerEntries[0]?.transactionType === 'FUND', `First ledger entry type is FUND`);
+        assert(Number(ledgerEntries[0]?.amount) === 10000, `Ledger entry amount is 10000`);
+
+        // 18. Eligible Escrow Release
+        console.log('\n--- Phase 18: Escrow Release to Vendor ---');
+        const releaseRes = await request(`${BACKEND_URL}/escrow/${milestone.id}/release`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${activeCorpToken}` },
+            body: JSON.stringify({
+                comment: 'Milestone 1 deliverable verified and accepted'
+            })
+        });
+        assert(releaseRes.ok, `Escrow release returns 200 OK (got ${releaseRes.status})`);
+        assert(releaseRes.data?.data?.transactionType === 'RELEASE', `Release ledger entry type is RELEASE`);
+        assert(Number(releaseRes.data?.data?.balanceAfter) === 0, `Escrow balance after release is 0`);
+
+        // 19. Double-Release Prevention
+        console.log('\n--- Phase 19: Double-Release Prevention ---');
+        const duplicateReleaseRes = await request(`${BACKEND_URL}/escrow/${milestone.id}/release`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${activeCorpToken}` },
+            body: JSON.stringify({
+                comment: 'Attempting illegal duplicate release'
+            })
+        });
+        assert(duplicateReleaseRes.status === 400, `Duplicate release is rejected with 400 Bad Request (got ${duplicateReleaseRes.status})`);
+
+        // 20. Admin Dashboard & Audit Trail
+        console.log('\n--- Phase 20: Admin Dashboard & Audit Logs ---');
+        const adminDashboardRes = await request(`${BACKEND_URL}/admin/dashboard`, {
+            headers: { Authorization: `Bearer ${activeCorpToken}` }
+        });
+        assert(adminDashboardRes.ok, 'GET /api/admin/dashboard returns 200 OK');
+        assert(adminDashboardRes.data?.data?.totalDeals !== undefined, 'Admin dashboard returns totalDeals metric');
+
+        const auditLogsRes = await request(`${BACKEND_URL}/admin/audit-logs`, {
+            headers: { Authorization: `Bearer ${activeCorpToken}` }
+        });
+        assert(auditLogsRes.ok, 'GET /api/admin/audit-logs returns 200 OK');
+        const logs = auditLogsRes.data?.data || [];
+        assert(logs.length > 0, `Audit log contains ${logs.length} logged business events`);
+
+        // 21. Test Cancel Deal Lifecycle
+        console.log('\n--- Phase 21: Deal Cancellation Flow ---');
         const dealToCancelRes = await request(`${BACKEND_URL}/deals`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${activeCorpToken}` },
@@ -221,8 +377,8 @@ async function runTests() {
         assert(cancelRes.ok, 'Cancel deal returns 200 OK');
         assert(cancelRes.data?.data?.status === 'CANCELLED', `Cancelled deal status is CANCELLED (got ${cancelRes.data?.data?.status})`);
 
-        // 12. Frontend Route Integrity Check
-        console.log('\n--- Phase 12: Frontend Route Integrity (No 404s, No Under Construction) ---');
+        // 22. Frontend Route Integrity Check
+        console.log('\n--- Phase 22: Frontend Route Integrity (No 404s, No Under Construction) ---');
         const frontendRoutes = [
             '/',
             '/login',
@@ -231,6 +387,7 @@ async function runTests() {
             '/corporate/projects',
             `/corporate/projects/${deal.id}`,
             '/corporate/milestones',
+            `/corporate/milestones/${milestone.id}`,
             '/corporate/payments',
             '/corporate/escrow',
             '/corporate/settings',
@@ -244,7 +401,9 @@ async function runTests() {
             '/vendor/settings',
             '/admin',
             '/admin/users',
-            '/admin/audit-logs'
+            '/admin/audit-logs',
+            '/finance',
+            '/finance/transactions'
         ];
 
         for (const route of frontendRoutes) {
