@@ -2,8 +2,12 @@
     "name": "finx-monorepo",
     "version": "1.0.0",
     "private": true,
+    "engines": {
+        "node": ">=20.18.0"
+    },
     "scripts": {
         "build": "npm run build --workspace=frontend",
+        "start": "npm run start --workspace=frontend",
         "lint": "npm run lint --workspace=frontend",
         "dev:frontend": "npm run dev --workspace=frontend",
         "dev:backend": "cd backend && .\\mvnw.cmd spring-boot:run",
