@@ -46,8 +46,9 @@ public class GoogleOAuthProperties {
                 this.redirectUri = "https://finx-backend-vq5b.onrender.com/api/auth/google/callback";
                 log.info("[OAUTH CONFIGURATION] Production profile active: resolved redirectUri to canonical Render URL: {}", this.redirectUri);
             }
-            if (this.frontendRedirectUrl == null || this.frontendRedirectUrl.trim().isEmpty() || this.frontendRedirectUrl.contains("localhost")) {
-                this.frontendRedirectUrl = "https://finx-frontend.onrender.com/auth/callback/google";
+            if (this.frontendRedirectUrl == null || this.frontendRedirectUrl.trim().isEmpty() || this.frontendRedirectUrl.contains("localhost") ||
+                (this.frontendRedirectUrl.contains("finx-frontend.onrender.com") && !this.frontendRedirectUrl.contains("-i9an"))) {
+                this.frontendRedirectUrl = "https://finx-frontend-i9an.onrender.com/auth/callback/google";
                 log.info("[OAUTH CONFIGURATION] Production profile active: resolved frontendRedirectUrl to Render: {}", this.frontendRedirectUrl);
             }
         }

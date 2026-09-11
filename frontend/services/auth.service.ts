@@ -41,10 +41,37 @@ export const authService = {
         try {
             const response = await api.get<ApiResponse<GoogleOAuthConfig> | GoogleOAuthConfig>("/auth/google/config");
             const data = (response.data as ApiResponse<GoogleOAuthConfig>)?.data || (response.data as GoogleOAuthConfig);
-            return data || { configured: false };
+            if (data && typeof data.configured === "boolean") {
+                return data;
+            }
         } catch {
-            return { configured: false };
+            // First tier fallback: attempt relative /api/auth/google/config fetch
+            try {
+                const res = await fetch("/api/auth/google/config");
+                if (res.ok) {
+                    const json = await res.json();
+                    const data = json?.data || json;
+                    if (data && typeof data.configured === "boolean") {
+                        return data;
+                    }
+                }
+            } catch {
+                // Second tier fallback: attempt direct production backend if reachable
+                try {
+                    const directRes = await fetch("https://finx-backend-vq5b.onrender.com/api/auth/google/config");
+                    if (directRes.ok) {
+                        const json = await directRes.json();
+                        const data = json?.data || json;
+                        if (data && typeof data.configured === "boolean") {
+                            return data;
+                        }
+                    }
+                } catch {
+                    // All attempts failed
+                }
+            }
         }
+        return { configured: false };
     },
 
     googleLogin: async (code: string): Promise<AuthResponse> => {
