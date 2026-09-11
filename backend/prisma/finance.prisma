@@ -1,0 +1,34 @@
+generator financeClient {
+  provider = "prisma-client-js"
+  output   = "../node_modules/@prisma/finance-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("FINANCE_DATABASE_URL")
+}
+
+model Payment {
+  id                String   @id @default(uuid())
+  projectId         String   // References Deals DB
+  milestoneId       String   // References Deals DB
+  amount            Float
+  currency          String   @default("INR")
+  status            String
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model EscrowTransaction {
+  id              String   @id @default(uuid())
+  milestoneId     String   // References Deals DB
+  amount          Float
+  balanceAfter    Float    @default(0)
+  transactionType String   @default("FUND")
+  status          String
+  comment         String?
+  releasedAt      DateTime?
+  createdAt       DateTime @default(now())
+}

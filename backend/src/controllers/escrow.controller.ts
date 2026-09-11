@@ -1,11 +1,14 @@
 import { Request, Response } from 'express';
-import { prisma, createNotification } from '../db';
+import { financeDb, dealsDb, createNotification } from '../db';
 import crypto from 'crypto';
 
 export const getDealEscrowBalance = async (req: Request, res: Response) => {
     const dealId = String(req.params.dealId);
-    const fundedTxs = await prisma.escrowTransaction.findMany({
-        where: { milestone: { projectId: dealId } }
+    const projectMilestones = await dealsDb.milestone.findMany({ where: { projectId: dealId }, select: { id: true } });
+    const mIds = projectMilestones.map(m => m.id);
+
+    const fundedTxs = await financeDb.escrowTransaction.findMany({
+        where: { milestoneId: { in: mIds } }
     });
     let balance = 0;
     for (const tx of fundedTxs) {
@@ -17,8 +20,11 @@ export const getDealEscrowBalance = async (req: Request, res: Response) => {
 
 export const getDealEscrowLedger = async (req: Request, res: Response) => {
     const dealId = String(req.params.dealId);
-    const txs = await prisma.escrowTransaction.findMany({
-        where: { milestone: { projectId: dealId } },
+    const projectMilestones = await dealsDb.milestone.findMany({ where: { projectId: dealId }, select: { id: true } });
+    const mIds = projectMilestones.map(m => m.id);
+
+    const txs = await financeDb.escrowTransaction.findMany({
+        where: { milestoneId: { in: mIds } },
         orderBy: { createdAt: 'asc' }
     });
     res.json(txs);
@@ -29,7 +35,7 @@ export const releaseEscrow = async (req: Request, res: Response): Promise<void> 
         const milestoneId = String(req.params.milestoneId);
         const { comment } = req.body;
 
-        const milestone = await prisma.milestone.findUnique({
+        const milestone = await dealsDb.milestone.findUnique({
             where: { id: milestoneId },
             include: { project: true }
         });
@@ -54,13 +60,16 @@ export const releaseEscrow = async (req: Request, res: Response): Promise<void> 
             return;
         }
 
-        await prisma.milestone.update({
+        await dealsDb.milestone.update({
             where: { id: milestoneId },
             data: { status: 'RELEASED' }
         });
 
-        const priorTxs = await prisma.escrowTransaction.findMany({
-            where: { milestone: { projectId: milestone.projectId } }
+        const projectMilestones = await dealsDb.milestone.findMany({ where: { projectId: milestone.projectId }, select: { id: true } });
+        const mIds = projectMilestones.map(m => m.id);
+
+        const priorTxs = await financeDb.escrowTransaction.findMany({
+            where: { milestoneId: { in: mIds } }
         });
         let priorBalance = 0;
         for (const pt of priorTxs) {
@@ -68,7 +77,7 @@ export const releaseEscrow = async (req: Request, res: Response): Promise<void> 
             if (pt.transactionType === 'RELEASE') priorBalance -= pt.amount;
         }
 
-        const tx = await prisma.escrowTransaction.create({
+        const tx = await financeDb.escrowTransaction.create({
             data: {
                 milestoneId,
                 amount: milestone.amount,
@@ -90,11 +99,11 @@ export const releaseEscrow = async (req: Request, res: Response): Promise<void> 
 
 export const getAdminEscrows = async (req: Request, res: Response): Promise<void> => {
     try {
-        const pending = await prisma.milestone.findMany({
+        const pending = await dealsDb.milestone.findMany({
             where: { OR: [{ status: 'APPROVED' }, { status: 'RELEASE_PENDING' }] }
         });
-        const released = await prisma.milestone.findMany({ where: { status: 'RELEASED' } });
-        const disputed = await prisma.milestone.findMany({ where: { status: 'DISPUTED' } });
+        const released = await dealsDb.milestone.findMany({ where: { status: 'RELEASED' } });
+        const disputed = await dealsDb.milestone.findMany({ where: { status: 'DISPUTED' } });
 
         res.json({ pending, released, disputed });
     } catch (err) {

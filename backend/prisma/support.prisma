@@ -1,0 +1,19 @@
+generator supportClient {
+  provider = "prisma-client-js"
+  output   = "../node_modules/@prisma/support-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("SUPPORT_DATABASE_URL")
+}
+
+model Dispute {
+  id              String   @id @default(uuid())
+  milestoneId     String   // References Deals DB
+  reason          String
+  status          String   @default("OPEN")
+  resolutionNotes String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}

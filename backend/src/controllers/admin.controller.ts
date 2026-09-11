@@ -1,25 +1,25 @@
 import { Request, Response } from 'express';
-import { prisma } from '../db';
+import { authDb, dealsDb, financeDb, supportDb } from '../db';
 
 export const getAdminDashboard = async (req: Request, res: Response) => {
     try {
-        const usersCount = await prisma.user.count();
-        const activeBuyers = await prisma.user.count({ where: { role: 'CORPORATE' } });
-        const activeVendors = await prisma.user.count({ where: { role: 'VENDOR' } });
-        const activeProjects = await prisma.project.count();
+        const usersCount = await authDb.user.count();
+        const activeBuyers = await authDb.user.count({ where: { role: 'CORPORATE' } });
+        const activeVendors = await authDb.user.count({ where: { role: 'VENDOR' } });
+        const activeProjects = await dealsDb.project.count();
 
-        const milestones = await prisma.milestone.findMany();
+        const milestones = await dealsDb.milestone.findMany();
         const totalProjectValue = milestones.reduce((acc: number, m: any) => acc + m.amount, 0);
 
-        const payments = await prisma.payment.findMany({ where: { status: 'PAYMENT_SUCCESS' } });
+        const payments = await financeDb.payment.findMany({ where: { status: 'PAYMENT_SUCCESS' } });
         const totalFundsDeposited = payments.reduce((acc: number, p: any) => acc + p.amount, 0);
 
         const totalFundsHeld = milestones.filter((m: any) => m.status === 'APPROVED' || m.status === 'RELEASE_PENDING').reduce((acc: number, m: any) => acc + m.amount, 0);
         const totalFundsReleased = milestones.filter((m: any) => m.status === 'RELEASED').reduce((acc: number, m: any) => acc + m.amount, 0);
         const pendingReleases = milestones.filter((m: any) => m.status === 'APPROVED' || m.status === 'RELEASE_PENDING').length;
 
-        const openDisputes = await prisma.dispute.count({ where: { status: 'OPEN' } });
-        const failedPayments = await prisma.payment.count({ where: { status: 'PAYMENT_FAILED' } });
+        const openDisputes = await supportDb.dispute.count({ where: { status: 'OPEN' } });
+        const failedPayments = await financeDb.payment.count({ where: { status: 'PAYMENT_FAILED' } });
 
         res.json({
             totalUsers: usersCount,
@@ -42,7 +42,7 @@ export const getAdminDashboard = async (req: Request, res: Response) => {
 };
 
 export const getUsers = async (req: Request, res: Response) => {
-    const users = await prisma.user.findMany();
+    const users = await authDb.user.findMany();
     res.json(users);
 };
 

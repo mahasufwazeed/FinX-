@@ -1,13 +1,26 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient as LegacyPrismaClient } from '@prisma/client';
+import { PrismaClient as AuthClient } from '@prisma/auth-client';
+import { PrismaClient as DealsClient } from '@prisma/deals-client';
+import { PrismaClient as FinanceClient } from '@prisma/finance-client';
+import { PrismaClient as SupportClient } from '@prisma/support-client';
+import { PrismaClient as TelemetryClient } from '@prisma/telemetry-client';
 
-export const prisma = new PrismaClient();
+// Legacy monolithic connection (TO BE DEPRECATED)
+export const prisma = new LegacyPrismaClient();
 
-// Global robust notification generator for live DB
+// The 5 Independent Microservice Boundaries
+export const authDb = new AuthClient();
+export const dealsDb = new DealsClient();
+export const financeDb = new FinanceClient();
+export const supportDb = new SupportClient();
+export const telemetryDb = new TelemetryClient();
+
+// Global Notification dispatcher dynamically routed to the Telemetry Service Context
 export async function createNotification(userId: string | null, title: string, message: string, route: string) {
     try {
-        await prisma.notification.create({
+        await telemetryDb.notification.create({
             data: {
-                userId, // if null, global/admin broadcast
+                userId, // references user ID abstractly
                 title,
                 message,
                 route,
@@ -15,6 +28,6 @@ export async function createNotification(userId: string | null, title: string, m
             }
         });
     } catch (error) {
-        console.error("Failed to create notification:", error);
+        console.error("Failed to create notification via Telemetry DB:", error);
     }
 }

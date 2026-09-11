@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { prisma } from '../db';
+import { telemetryDb } from '../db';
 
 export const getNotifications = async (req: Request, res: Response): Promise<void> => {
     try {
         const userId = (req as any).user?.id;
-        const notifications = await prisma.notification.findMany({
+        const notifications = await telemetryDb.notification.findMany({
             where: { OR: [{ userId }, { userId: null }] },
             orderBy: { createdAt: 'desc' }
         });
@@ -17,7 +17,7 @@ export const getNotifications = async (req: Request, res: Response): Promise<voi
 export const markAsRead = async (req: Request, res: Response): Promise<void> => {
     try {
         const id = String(req.params.id);
-        await prisma.notification.update({
+        await telemetryDb.notification.update({
             where: { id },
             data: { isRead: true }
         });
@@ -30,7 +30,7 @@ export const markAsRead = async (req: Request, res: Response): Promise<void> => 
 export const markAllAsRead = async (req: Request, res: Response): Promise<void> => {
     try {
         const userId = (req as any).user?.id;
-        await prisma.notification.updateMany({
+        await telemetryDb.notification.updateMany({
             where: { userId },
             data: { isRead: true }
         });

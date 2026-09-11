@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { prisma } from '../db';
+import { financeDb, dealsDb } from '../db';
 
 export const handleRazorpayWebhook = async (req: Request, res: Response) => {
     const signature = req.headers['x-razorpay-signature'];
@@ -13,7 +13,7 @@ export const handleRazorpayWebhook = async (req: Request, res: Response) => {
 
     if (!orderId) { res.json({ success: true }); return; }
 
-    const payment = await prisma.payment.findFirst({ where: { razorpayOrderId: orderId } });
+    const payment = await financeDb.payment.findFirst({ where: { razorpayOrderId: orderId } });
     if (!payment) { res.status(404).json({ message: 'Order not found' }); return; }
 
     if (payment.status === 'PAYMENT_SUCCESS') {
@@ -21,13 +21,16 @@ export const handleRazorpayWebhook = async (req: Request, res: Response) => {
         return;
     }
 
-    await prisma.payment.update({
+    await financeDb.payment.update({
         where: { id: payment.id },
         data: { status: 'PAYMENT_SUCCESS', razorpayPaymentId: paymentIdStr }
     });
 
-    const priorTxs = await prisma.escrowTransaction.findMany({
-        where: { milestone: { projectId: payment.projectId } }
+    const projectMilestones = await dealsDb.milestone.findMany({ where: { projectId: payment.projectId }, select: { id: true } });
+    const mIds = projectMilestones.map(m => m.id);
+
+    const priorTxs = await financeDb.escrowTransaction.findMany({
+        where: { milestoneId: { in: mIds } }
     });
 
     let priorBalance = 0;
@@ -36,7 +39,7 @@ export const handleRazorpayWebhook = async (req: Request, res: Response) => {
         if (tx.transactionType === 'RELEASE') priorBalance -= tx.amount;
     }
 
-    await prisma.escrowTransaction.create({
+    await financeDb.escrowTransaction.create({
         data: {
             milestoneId: payment.milestoneId,
             amount: payment.amount,

@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
-import { prisma } from '../db';
+import { financeDb, dealsDb } from '../db';
 
 export const getFinanceDashboard = async (req: Request, res: Response) => {
     try {
-        const payments = await prisma.payment.findMany({ where: { status: 'PAYMENT_SUCCESS' } });
+        const payments = await financeDb.payment.findMany({ where: { status: 'PAYMENT_SUCCESS' } });
         const deposits = payments.reduce((acc: number, p: any) => acc + p.amount, 0);
 
-        const releasedMilestones = await prisma.milestone.findMany({ where: { status: 'RELEASED' } });
+        const releasedMilestones = await dealsDb.milestone.findMany({ where: { status: 'RELEASED' } });
         const released = releasedMilestones.reduce((acc: number, m: any) => acc + m.amount, 0);
 
         res.json({
@@ -26,7 +26,7 @@ export const getFinanceDashboard = async (req: Request, res: Response) => {
 
 export const getTransactions = async (req: Request, res: Response) => {
     try {
-        const payments = await prisma.payment.findMany();
+        const payments = await financeDb.payment.findMany();
         const txs = payments.map((p: any) => ({
             id: p.id,
             type: 'DEPOSIT',

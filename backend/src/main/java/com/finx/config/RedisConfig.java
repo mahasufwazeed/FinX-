@@ -12,7 +12,10 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
+
 @Configuration
+@EnableRedisRepositories(basePackages = "com.finx.cache.repository") // Isolates Redis scans away from JPA (e.g. UserRepository)
 public class RedisConfig {
 
     private static final Logger log = LoggerFactory.getLogger(RedisConfig.class);

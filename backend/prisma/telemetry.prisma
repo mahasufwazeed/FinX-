@@ -1,0 +1,30 @@
+generator telemetryClient {
+  provider = "prisma-client-js"
+  output   = "../node_modules/@prisma/telemetry-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("TELEMETRY_DATABASE_URL")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String?  // References Auth DB
+  title     String
+  message   String
+  route     String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  actorId     String?  // References Auth DB
+  action      String
+  entityType  String
+  entityId    String
+  description String?
+  result      String   @default("SUCCESS")
+  createdAt   DateTime @default(now())
+}

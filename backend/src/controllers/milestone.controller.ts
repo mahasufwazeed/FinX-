@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { prisma, createNotification } from '../db';
+import { dealsDb, createNotification } from '../db';
 import crypto from 'crypto';
 
 export const getAllMilestones = async (req: Request, res: Response): Promise<void> => {
     try {
-        const milestones = await prisma.milestone.findMany({ include: { deliverables: true } });
+        const milestones = await dealsDb.milestone.findMany({ include: { deliverables: true } });
         res.json(milestones);
     } catch (err) {
         res.status(500).json({ message: 'Failed to fetch milestones' });
@@ -14,7 +14,7 @@ export const getAllMilestones = async (req: Request, res: Response): Promise<voi
 export const getProjectMilestones = async (req: Request, res: Response): Promise<void> => {
     try {
         const projectId = String(req.params.projectId);
-        let milestones = await prisma.milestone.findMany({
+        let milestones = await dealsDb.milestone.findMany({
             where: { projectId },
             include: { deliverables: true }
         });
@@ -27,7 +27,7 @@ export const getProjectMilestones = async (req: Request, res: Response): Promise
 export const getMilestone = async (req: Request, res: Response): Promise<void> => {
     try {
         const id = String(req.params.id);
-        const milestone = await prisma.milestone.findUnique({
+        const milestone = await dealsDb.milestone.findUnique({
             where: { id },
             include: { deliverables: true }
         });
@@ -45,7 +45,7 @@ export const getMilestone = async (req: Request, res: Response): Promise<void> =
 export const requestChanges = async (req: Request, res: Response): Promise<void> => {
     try {
         const id = String(req.params.id);
-        const milestone = await prisma.milestone.update({
+        const milestone = await dealsDb.milestone.update({
             where: { id },
             data: { status: 'IN_PROGRESS' }
         });
@@ -59,7 +59,7 @@ export const requestChanges = async (req: Request, res: Response): Promise<void>
 
 const updateMilestoneStatus = async (id: string, newStatus: string) => {
     try {
-        return await prisma.milestone.update({
+        return await dealsDb.milestone.update({
             where: { id },
             data: { status: newStatus },
             include: { deliverables: true }
@@ -70,7 +70,7 @@ const updateMilestoneStatus = async (id: string, newStatus: string) => {
 }
 
 const getProjectContext = async (milestoneId: string) => {
-    const milestone = await prisma.milestone.findUnique({
+    const milestone = await dealsDb.milestone.findUnique({
         where: { id: milestoneId },
         include: { project: true }
     });
@@ -106,7 +106,7 @@ export const submitMilestone = async (req: Request, res: Response): Promise<void
         return res.status(400).json({ message: 'Description exceeds 4000 limit' }) as any;
     }
 
-    const deliverable = await prisma.deliverable.create({
+    const deliverable = await dealsDb.deliverable.create({
         data: {
             milestoneId: ctx.id,
             fileName,
@@ -146,14 +146,14 @@ export const rejectMilestone = async (req: Request, res: Response): Promise<void
 export const uploadDeliverable = async (req: Request, res: Response): Promise<void> => {
     try {
         const id = String(req.params.id);
-        const milestone = await prisma.milestone.findUnique({ where: { id } });
+        const milestone = await dealsDb.milestone.findUnique({ where: { id } });
 
         if (!milestone) {
             res.status(404).json({ message: 'Milestone not found' });
             return;
         }
 
-        const newDeliverable = await prisma.deliverable.create({
+        const newDeliverable = await dealsDb.deliverable.create({
             data: {
                 milestoneId: id,
                 fileName: req.body?.fileName || 'document.zip',
@@ -163,7 +163,7 @@ export const uploadDeliverable = async (req: Request, res: Response): Promise<vo
         });
 
         if (milestone.status === 'IN_PROGRESS') {
-            await prisma.milestone.update({ where: { id }, data: { status: 'SUBMITTED' } });
+            await dealsDb.milestone.update({ where: { id }, data: { status: 'SUBMITTED' } });
         }
 
         res.status(201).json(newDeliverable);

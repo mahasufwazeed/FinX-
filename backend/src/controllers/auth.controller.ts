@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../db';
+import { authDb } from '../db';
 import crypto from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 
@@ -9,7 +9,23 @@ const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_finx_key_2026';
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export const getGoogleConfig = (req: Request, res: Response) => {
-    res.json({ clientId: process.env.GOOGLE_CLIENT_ID || 'dummy_client_id' });
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+
+    if (!clientId) {
+        res.json({ configured: false });
+        return;
+    }
+
+    const redirectUri = 'http://localhost:3000/auth/callback/google';
+    const scopes = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile';
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scopes)}&access_type=offline&prompt=consent`;
+
+    res.json({
+        configured: true,
+        clientId,
+        authUrl,
+        redirectUri
+    });
 };
 
 export const refreshToken = (req: Request, res: Response): void => {
@@ -28,39 +44,90 @@ export const refreshToken = (req: Request, res: Response): void => {
     }
 };
 
-export const googleSignIn = async (req: Request, res: Response): Promise<void> => {
+export const googleCallback = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { token } = req.body;
-        if (!token) {
-            res.status(400).json({ message: 'Google token required' });
+        const { code } = req.query;
+        if (!code || typeof code !== 'string') {
+            res.redirect('http://localhost:3000/auth/login?error=NoCodeProvided');
             return;
         }
 
-        const ticket = await client.verifyIdToken({
-            idToken: token,
+        const redirectUri = 'http://localhost:3000/auth/callback/google';
+        const oauth2Client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, redirectUri);
+
+        const { tokens } = await oauth2Client.getToken(code);
+        oauth2Client.setCredentials(tokens);
+
+        const ticket = await oauth2Client.verifyIdToken({
+            idToken: tokens.id_token!,
             audience: process.env.GOOGLE_CLIENT_ID,
         });
 
         const payload = ticket.getPayload();
-        if (!payload) {
+        if (!payload || !payload.email) {
+            res.redirect('http://localhost:3000/auth/login?error=InvalidGoogleToken');
+            return;
+        }
+
+        const email = payload.email;
+        let user = await authDb.user.findUnique({ where: { email } });
+        if (!user) {
+            user = await authDb.user.create({
+                data: {
+                    email,
+                    fullName: payload.name || payload.given_name || 'Google User',
+                    password: crypto.randomUUID(),
+                    role: 'CORPORATE'
+                }
+            });
+        }
+
+        const accessToken = jwt.sign(
+            { id: user.id, email: user.email, role: user.role, fullName: user.fullName },
+            JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        // Redirect back to frontend with tokens
+        res.redirect(`http://localhost:3000/auth/callback?token=${accessToken}&refreshToken=${accessToken}`);
+    } catch (error) {
+        console.error("Google Auth Callback Error:", error);
+        res.redirect('http://localhost:3000/auth/login?error=GoogleAuthFailed');
+    }
+};
+
+export const googleSignIn = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { code } = req.body;
+        if (!code) {
+            res.status(400).json({ message: 'Authorization code required' });
+            return;
+        }
+
+        const redirectUri = 'http://localhost:3000/auth/callback/google';
+        const oauth2Client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, redirectUri);
+
+        const { tokens } = await oauth2Client.getToken(code);
+
+        const ticket = await oauth2Client.verifyIdToken({
+            idToken: tokens.id_token!,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload();
+        if (!payload || !payload.email) {
             res.status(401).json({ message: 'Invalid Google token' });
             return;
         }
 
-        const { email, name, given_name } = payload;
-        if (!email) {
-            res.status(400).json({ message: 'Email not provided by Google' });
-            return;
-        }
-
-        // Find or create user
-        let user = await prisma.user.findUnique({ where: { email } });
+        const email = payload.email;
+        let user = await authDb.user.findUnique({ where: { email } });
         if (!user) {
-            user = await prisma.user.create({
+            user = await authDb.user.create({
                 data: {
                     email,
-                    fullName: name || given_name || 'Google User',
-                    password: crypto.randomUUID(), // Random password for oauth
+                    fullName: payload.name || payload.given_name || 'Google User',
+                    password: crypto.randomUUID(),
                     role: 'CORPORATE'
                 }
             });
@@ -88,14 +155,14 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         const { email, password, fullName, name, role } = req.body;
         const actualName = fullName || name;
 
-        const existingUser = await prisma.user.findUnique({ where: { email } });
+        const existingUser = await authDb.user.findUnique({ where: { email } });
         if (existingUser) {
             res.status(409).json({ message: 'Email is already registered' });
             return;
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = await prisma.user.create({
+        const user = await authDb.user.create({
             data: {
                 email,
                 fullName: actualName,
@@ -124,7 +191,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     try {
         const { email, password } = req.body;
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await authDb.user.findUnique({ where: { email } });
         if (!user) {
             res.status(401).json({ message: 'Invalid credentials' });
             return;
@@ -147,7 +214,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             refreshToken: accessToken,
             user: { id: user.id, email: user.email, fullName: user.fullName, role: user.role },
         });
-    } catch (error) {
+    } catch (err) {
+        console.error("LOGIN ERROR:", err);
         res.status(500).json({ message: 'Server error during login' });
     }
 };
@@ -156,7 +224,7 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
     try {
         const userId = (req as any).user?.id;
 
-        const user = await prisma.user.findUnique({ where: { id: userId } });
+        const user = await authDb.user.findUnique({ where: { id: userId } });
         if (!user) {
             res.status(404).json({ message: 'User not found' });
             return;

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { prisma } from '../db';
+import { financeDb, dealsDb } from '../db';
 import crypto from 'crypto';
 
 export const createPaymentOrder = async (req: Request, res: Response): Promise<void> => {
@@ -7,7 +7,7 @@ export const createPaymentOrder = async (req: Request, res: Response): Promise<v
         const { projectId, dealId, milestoneId } = req.body;
         const actualProjectId = projectId || dealId;
 
-        const milestone = await prisma.milestone.findUnique({ where: { id: milestoneId } });
+        const milestone = await dealsDb.milestone.findUnique({ where: { id: milestoneId } });
         if (!milestone) {
             res.status(404).json({ message: 'Milestone not found' });
             return;
@@ -17,7 +17,7 @@ export const createPaymentOrder = async (req: Request, res: Response): Promise<v
 
         const razorpayOrderId = 'order_' + crypto.randomUUID().replace(/-/g, '').substring(0, 14);
 
-        const newPayment = await prisma.payment.create({
+        const newPayment = await financeDb.payment.create({
             data: {
                 projectId: actualProjectId,
                 milestoneId,
@@ -47,22 +47,32 @@ export const verifyPayment = async (req: Request, res: Response): Promise<void> 
     try {
         const { paymentId, razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
 
-        const payment = await prisma.payment.findUnique({
-            where: { id: paymentId },
-            include: { milestone: { include: { project: true } } }
+        const payment = await financeDb.payment.findUnique({
+            where: { id: paymentId }
         });
         if (!payment) {
             res.status(404).json({ message: 'Payment record not found' });
             return;
         }
 
-        const userId = (req as any).user?.id;
-        if (payment.milestone.project.buyerId !== userId) {
-            res.status(403).json({ message: 'Unauthorized' });
-            return; // tests expect 403 or 401
+        // Distributed Join: Fetch milestone from Deals Context
+        const milestone = await dealsDb.milestone.findUnique({
+            where: { id: payment.milestoneId },
+            include: { project: true }
+        });
+
+        if (!milestone) {
+            res.status(404).json({ message: 'Linked milestone missing' });
+            return;
         }
 
-        await prisma.payment.update({
+        const userId = (req as any).user?.id;
+        if (milestone.project.buyerId !== userId) {
+            res.status(403).json({ message: 'Unauthorized' });
+            return;
+        }
+
+        await financeDb.payment.update({
             where: { id: paymentId },
             data: {
                 status: 'PAYMENT_SUCCESS',
@@ -70,17 +80,23 @@ export const verifyPayment = async (req: Request, res: Response): Promise<void> 
             }
         });
 
-        if (payment.milestone.status === 'PENDING') {
-            await prisma.milestone.update({
+        if (milestone.status === 'PENDING') {
+            await dealsDb.milestone.update({
                 where: { id: payment.milestoneId },
                 data: { status: 'IN_PROGRESS' }
             });
         }
 
         // Add FUND to escrow ledger
-        // calculate previous balance
-        const priorTxs = await prisma.escrowTransaction.findMany({
-            where: { milestone: { projectId: payment.projectId } }
+        // Distributed cross-reference: get all milestone IDs for this project
+        const projectMilestones = await dealsDb.milestone.findMany({
+            where: { projectId: payment.projectId },
+            select: { id: true }
+        });
+        const mIds = projectMilestones.map(m => m.id);
+
+        const priorTxs = await financeDb.escrowTransaction.findMany({
+            where: { milestoneId: { in: mIds } }
         });
 
         let priorBalance = 0;
@@ -89,7 +105,7 @@ export const verifyPayment = async (req: Request, res: Response): Promise<void> 
             if (tx.transactionType === 'RELEASE') priorBalance -= tx.amount;
         }
 
-        await prisma.escrowTransaction.create({
+        await financeDb.escrowTransaction.create({
             data: {
                 milestoneId: payment.milestoneId,
                 amount: payment.amount,
@@ -109,7 +125,7 @@ export const verifyPayment = async (req: Request, res: Response): Promise<void> 
 
 export const getPaymentById = async (req: Request, res: Response): Promise<void> => {
     try {
-        const payment = await prisma.payment.findUnique({ where: { id: String(req.params.paymentId) } });
+        const payment = await financeDb.payment.findUnique({ where: { id: String(req.params.paymentId) } });
         if (!payment) {
             res.status(404).json({ message: 'Payment not found' });
             return;
@@ -122,7 +138,7 @@ export const getPaymentById = async (req: Request, res: Response): Promise<void>
 
 export const getBuyerPayments = async (req: Request, res: Response): Promise<void> => {
     try {
-        const payments = await prisma.payment.findMany();
+        const payments = await financeDb.payment.findMany();
         res.json(payments);
     } catch (err) {
         res.status(500).json({ message: 'Server error' });

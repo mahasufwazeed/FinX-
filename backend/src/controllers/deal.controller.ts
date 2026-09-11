@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
-import { prisma } from '../db';
+import { authDb, dealsDb } from '../db';
 import crypto from 'crypto';
 
 export const getDeals = async (req: Request, res: Response): Promise<void> => {
     try {
         const userId = (req as any).user?.id;
-        const deals = await prisma.project.findMany({
+        const deals = await dealsDb.project.findMany({
             where: {
                 OR: [
                     { buyerId: userId },
@@ -23,7 +23,7 @@ export const getDeals = async (req: Request, res: Response): Promise<void> => {
 export const getDeal = async (req: Request, res: Response): Promise<void> => {
     try {
         const userId = (req as any).user?.id;
-        const deal = await prisma.project.findUnique({
+        const deal = await dealsDb.project.findUnique({
             where: { id: String(req.params.id) },
             include: { milestones: true }
         });
@@ -49,13 +49,13 @@ export const createDeal = async (req: Request, res: Response): Promise<void> => 
         const buyerId = (req as any).user?.id;
         const { title, description, sellerId, totalAmount, currency = 'USD' } = req.body;
 
-        const dealer = await prisma.user.findUnique({ where: { id: sellerId } });
+        const dealer = await authDb.user.findUnique({ where: { id: sellerId } });
         if (!dealer || (dealer.role !== 'SELLER' && dealer.role !== 'VENDOR')) {
             res.status(400).json({ message: 'Invalid vendor assigned' });
             return;
         }
 
-        const project = await prisma.project.create({
+        const project = await dealsDb.project.create({
             data: {
                 title,
                 description,
@@ -76,7 +76,7 @@ export const createDeal = async (req: Request, res: Response): Promise<void> => 
 
 export const getSellers = async (req: Request, res: Response): Promise<void> => {
     try {
-        const sellers = await prisma.user.findMany({
+        const sellers = await authDb.user.findMany({
             where: {
                 OR: [
                     { role: 'SELLER' },
@@ -97,7 +97,7 @@ export const acceptDeal = async (req: Request, res: Response): Promise<void> => 
         const userId = (req as any).user?.id;
         const dealId = String(req.params.id);
 
-        const deal = await prisma.project.findUnique({ where: { id: dealId } });
+        const deal = await dealsDb.project.findUnique({ where: { id: dealId } });
 
         if (!deal) {
             res.status(404).json({ message: 'Deal not found' });
@@ -114,7 +114,7 @@ export const acceptDeal = async (req: Request, res: Response): Promise<void> => 
             return;
         }
 
-        const updated = await prisma.project.update({
+        const updated = await dealsDb.project.update({
             where: { id: dealId },
             data: { status: 'ACTIVE' }
         });
@@ -130,7 +130,7 @@ export const cancelDeal = async (req: Request, res: Response): Promise<void> => 
         const userId = (req as any).user?.id;
         const dealId = String(req.params.id);
 
-        const deal = await prisma.project.findUnique({ where: { id: dealId } });
+        const deal = await dealsDb.project.findUnique({ where: { id: dealId } });
 
         if (!deal) {
             res.status(404).json({ message: 'Deal not found' });
@@ -147,7 +147,7 @@ export const cancelDeal = async (req: Request, res: Response): Promise<void> => 
             return;
         }
 
-        const updated = await prisma.project.update({
+        const updated = await dealsDb.project.update({
             where: { id: dealId },
             data: { status: 'CANCELLED' }
         });
@@ -164,7 +164,7 @@ export const createMilestone = async (req: Request, res: Response): Promise<void
         const dealId = String(req.params.id);
         const { title, description, amount, sequence, currency, dueDate } = req.body;
 
-        const deal = await prisma.project.findUnique({ where: { id: dealId } });
+        const deal = await dealsDb.project.findUnique({ where: { id: dealId } });
         if (!deal) {
             res.status(404).json({ message: 'Deal not found' });
             return;
@@ -175,7 +175,7 @@ export const createMilestone = async (req: Request, res: Response): Promise<void
             return;
         }
 
-        const milestone = await prisma.milestone.create({
+        const milestone = await dealsDb.milestone.create({
             data: {
                 projectId: dealId,
                 title,
