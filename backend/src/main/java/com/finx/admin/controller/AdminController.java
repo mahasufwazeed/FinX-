@@ -70,8 +70,7 @@ public class AdminController {
         List<EscrowLedger> allLedgers = escrowLedgerRepository.findAll();
 
         final BigDecimal totalProjectValue = allDeals.stream()
-                .map
-                )
+                .map(Deal::getTotalAmount)
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
