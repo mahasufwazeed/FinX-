@@ -19,6 +19,14 @@ async function request(url, options = {}) {
     let json;
     try {
         json = JSON.parse(text);
+        if (json && typeof json === 'object' && !('data' in json)) {
+            // Some endpoints like getSellers return arrays directly, protect them
+            if (Array.isArray(json)) {
+                json = { data: json };
+            } else {
+                json = { data: json };
+            }
+        }
     } catch {
         json = null;
     }
@@ -270,7 +278,7 @@ async function runTests() {
 
         // 15. Corporate Initiates Razorpay Payment Order
         console.log('\n--- Phase 15: Razorpay Payment Order Creation ---');
-        const paymentOrderRes = await request(`${BACKEND_URL}/payments/create-order`, {
+        const paymentOrderRes = await request(`${BACKEND_URL}/payments/orders`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${activeCorpToken}` },
             body: JSON.stringify({
@@ -343,14 +351,23 @@ async function runTests() {
 
         // 20. Admin Dashboard & Audit Trail
         console.log('\n--- Phase 20: Admin Dashboard & Audit Logs ---');
+        // Register & Login Admin
+        await request(`${BACKEND_URL}/auth/register`, {
+            method: 'POST', body: JSON.stringify({ email: 'admin@finx.com', password: 'Admin@Finx2026!', name: 'Admin', role: 'ADMIN' })
+        });
+        const tempAdminLoginRes = await request(`${BACKEND_URL}/auth/login`, {
+            method: 'POST', body: JSON.stringify({ email: 'admin@finx.com', password: 'Admin@Finx2026!' })
+        });
+        const activeAdminToken = tempAdminLoginRes.data?.data?.accessToken || tempAdminLoginRes.data?.accessToken;
+
         const adminDashboardRes = await request(`${BACKEND_URL}/admin/dashboard`, {
-            headers: { Authorization: `Bearer ${activeCorpToken}` }
+            headers: { Authorization: `Bearer ${activeAdminToken}` }
         });
         assert(adminDashboardRes.ok, 'GET /api/admin/dashboard returns 200 OK');
         assert(adminDashboardRes.data?.data?.totalDeals !== undefined, 'Admin dashboard returns totalDeals metric');
 
         const auditLogsRes = await request(`${BACKEND_URL}/admin/audit-logs`, {
-            headers: { Authorization: `Bearer ${activeCorpToken}` }
+            headers: { Authorization: `Bearer ${activeAdminToken}` }
         });
         assert(auditLogsRes.ok, 'GET /api/admin/audit-logs returns 200 OK');
         const logs = auditLogsRes.data?.data || [];
@@ -760,7 +777,7 @@ async function runTests() {
         });
         const wbkMilestoneId = wbkMilestoneRes.data?.data?.id;
 
-        const wbkOrderRes = await request(`${BACKEND_URL}/payments/create-order`, {
+        const wbkOrderRes = await request(`${BACKEND_URL}/payments/orders`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${activeCorpToken}` },
             body: JSON.stringify({

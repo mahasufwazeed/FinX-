@@ -1,12 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import fs from 'fs';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_finx_key_2026';
 
 export const authenticate = (req: Request, res: Response, next: NextFunction): void => {
+    fs.appendFileSync('auth.log', `HIT: ${req.method} ${req.originalUrl}\n`);
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {
+        console.log('REJECTED NO TOKEN');
         res.status(401).json({ message: 'No token provided' });
         return;
     }

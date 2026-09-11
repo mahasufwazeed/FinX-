@@ -8,6 +8,26 @@ import { OAuth2Client } from 'google-auth-library';
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_finx_key_2026';
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+export const getGoogleConfig = (req: Request, res: Response) => {
+    res.json({ clientId: process.env.GOOGLE_CLIENT_ID || 'dummy_client_id' });
+};
+
+export const refreshToken = (req: Request, res: Response): void => {
+    const { refreshToken } = req.body;
+    if (!refreshToken) { res.status(401).json({ message: 'Refresh token required ' }); return; }
+    try {
+        const decoded = jwt.verify(refreshToken, JWT_SECRET) as any;
+        const accessToken = jwt.sign(
+            { id: decoded.id, email: decoded.email, role: decoded.role, fullName: decoded.fullName },
+            JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+        res.json({ accessToken, refreshToken: accessToken });
+    } catch {
+        res.status(401).json({ message: 'Invalid refresh token' });
+    }
+};
+
 export const googleSignIn = async (req: Request, res: Response): Promise<void> => {
     try {
         const { token } = req.body;
@@ -65,7 +85,8 @@ export const googleSignIn = async (req: Request, res: Response): Promise<void> =
 
 export const register = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { email, password, fullName, role } = req.body;
+        const { email, password, fullName, name, role } = req.body;
+        const actualName = fullName || name;
 
         const existingUser = await prisma.user.findUnique({ where: { email } });
         if (existingUser) {
@@ -77,7 +98,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         const user = await prisma.user.create({
             data: {
                 email,
-                fullName,
+                fullName: actualName,
                 password: hashedPassword,
                 role: role || 'CORPORATE',
             }
@@ -92,7 +113,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         res.status(201).json({
             accessToken,
             refreshToken: accessToken,
-            user: { id: user.id, email: user.email, fullName: user.fullName, role: user.role },
+            user: { id: user.id, email: user.email, fullName: user.fullName, name: user.fullName, role: user.role },
         });
     } catch (error) {
         res.status(500).json({ message: 'Server error during registration' });

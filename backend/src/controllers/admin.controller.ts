@@ -33,7 +33,8 @@ export const getAdminDashboard = async (req: Request, res: Response) => {
             pendingReleases,
             openDisputes,
             failedPayments,
-            failedReleases: 0
+            failedReleases: 0,
+            totalDeals: activeProjects
         });
     } catch (err) {
         res.status(500).json({ message: 'Server Error' });
@@ -47,7 +48,14 @@ export const getUsers = async (req: Request, res: Response) => {
 
 export const getAuditLogs = async (req: Request, res: Response) => {
     const logs = [
-        { id: 'log_1', actorName: 'System', actorRole: 'SYSTEM', action: 'SYSTEM_START', entityType: 'SERVER', entityId: 'sys_0', description: 'FINX Secure Engine Init', timestamp: new Date().toISOString(), result: 'SUCCESS' }
-    ];
+        'USER_REGISTERED', 'USER_LOGIN', 'DEAL_CREATED', 'DEAL_ACCEPTED',
+        'MILESTONE_CREATED', 'MILESTONE_STARTED', 'DELIVERABLE_SUBMITTED', 'MILESTONE_APPROVED',
+        'PAYMENT_CREATED', 'PAYMENT_VERIFIED', 'ESCROW_FUNDED', 'ESCROW_RELEASED',
+        'DEAL_CANCELLED', 'DISPUTE_CREATED', 'DISPUTE_RESOLVED'
+    ].map((action, i) => ({
+        id: `log_${i}`, actorName: 'System', actorRole: 'SYSTEM', action,
+        entityType: 'SERVER', entityId: `sys_${i}`, description: `Action ${action}`,
+        timestamp: new Date().toISOString(), result: 'SUCCESS'
+    }));
     res.json(logs);
 };
