@@ -3,8 +3,6 @@ package com.finx.payment.service;
 import com.finx.payment.config.RazorpayProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.web.client.ClientHttpRequestFactories;
-import org.springframework.boot.web.client.ClientHttpRequestFactorySettings;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -14,7 +12,6 @@ import javax.crypto.spec.SecretKeySpec;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.time.Duration;
 import java.util.HexFormat;
 import java.util.Map;
 import java.util.UUID;
@@ -47,7 +44,7 @@ public class RazorpayService {
                         "receipt", receipt
                 );
 
-                Map response = restClient.post()
+                Map<?, ?> response = restClient.post()
                         .uri("/orders")
                         .headers(headers -> headers.setBasicAuth(properties.getKeyId(), properties.getKeySecret()))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -56,7 +53,7 @@ public class RazorpayService {
                         .body(Map.class);
 
                 if (response != null && response.containsKey("id")) {
-                    String orderId = (String) response.get("id");
+                    String orderId = String.valueOf(response.get("id"));
                     log.info("Live Razorpay order created successfully: {}", orderId);
                     return orderId;
                 }

@@ -53,7 +53,7 @@ class AuthEndToEndTest {
 
         // 1. Register new BUYER
         RegisterRequest registerRequest = new RegisterRequest("E2E Buyer", email, password, Role.BUYER);
-        MvcResult registerResult = mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registerRequest)))
                 .andExpect(status().isCreated())
@@ -61,8 +61,7 @@ class AuthEndToEndTest {
                 .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.data.refreshToken").isNotEmpty())
                 .andExpect(jsonPath("$.data.user.email").value(email))
-                .andExpect(jsonPath("$.data.user.role").value("BUYER"))
-                .andReturn();
+                .andExpect(jsonPath("$.data.user.role").value("BUYER"));
 
         // 2. Attempt duplicate email registration -> should fail with 409 Conflict
         mockMvc.perform(post("/api/auth/register")

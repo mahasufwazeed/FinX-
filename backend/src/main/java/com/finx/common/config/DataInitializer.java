@@ -11,6 +11,9 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+/**
+ * Initializes default system data such as the administrative account on application startup.
+ */
 @Component
 public class DataInitializer implements ApplicationRunner {
 

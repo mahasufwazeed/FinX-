@@ -5,7 +5,6 @@ import com.finx.common.enums.Role;
 import com.finx.deal.entity.Deal;
 import com.finx.deal.entity.DealStatus;
 import com.finx.deal.repository.DealRepository;
-import com.finx.exception.BadRequestException;
 import com.finx.exception.UnauthorizedException;
 import com.finx.milestone.dto.request.CreateMilestoneRequest;
 import com.finx.milestone.dto.request.SubmitDeliverableRequest;

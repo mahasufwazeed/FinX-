@@ -38,6 +38,7 @@ class SecurityHardenedTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @SuppressWarnings("unused")
     private static class RegisteredUser {
         final UUID id;
         final String email;
