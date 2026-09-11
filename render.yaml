@@ -41,7 +41,7 @@ services:
       - key: GOOGLE_CLIENT_SECRET
         sync: false
       - key: GOOGLE_REDIRECT_URI
-        value: "https://finx-backend.onrender.com/api/auth/google/callback"
+        value: "https://finx-backend-vq5b.onrender.com/api/auth/google/callback"
       - key: FRONTEND_OAUTH_CALLBACK_URL
         value: "https://finx-frontend.onrender.com/auth/callback/google"
 
@@ -57,7 +57,7 @@ services:
     startCommand: npm run start
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        value: "https://finx-backend.onrender.com/api"
+        value: "https://finx-backend-vq5b.onrender.com/api"
       - key: PORT
         value: "3000"
       - key: NEXT_PUBLIC_RAZORPAY_KEY_ID
@@ -65,4 +65,4 @@ services:
       - key: NEXT_PUBLIC_GOOGLE_CLIENT_ID
         sync: false
       - key: NEXT_PUBLIC_GOOGLE_REDIRECT_URI
-        value: "https://finx-backend.onrender.com/api/auth/google/callback"
+        value: "https://finx-backend-vq5b.onrender.com/api/auth/google/callback"

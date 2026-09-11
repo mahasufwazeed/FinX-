@@ -17,7 +17,7 @@ export const getApiBaseUrl = (): string => {
         if (!isLocalHost) {
             // Running on public domain/Render
             if (!url || url.includes("localhost") || url.includes("127.0.0.1")) {
-                url = "https://finx-backend.onrender.com/api";
+                url = "https://finx-backend-vq5b.onrender.com/api";
             }
         } else {
             // Running on local development

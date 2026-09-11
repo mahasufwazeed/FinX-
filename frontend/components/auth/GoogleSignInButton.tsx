@@ -55,7 +55,7 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
         if (typeof window !== "undefined") {
             const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
             if (!isLocal && loginUrl.includes("localhost:8080")) {
-                loginUrl = loginUrl.replace(/http:\/\/localhost:8080(\/api)?/, "https://finx-backend.onrender.com/api");
+                loginUrl = loginUrl.replace(/http:\/\/localhost:8080(\/api)?/, "https://finx-backend-vq5b.onrender.com/api");
             }
         }
 

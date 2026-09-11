@@ -20,9 +20,9 @@ public class DatabaseConfig {
     @Bean
     @Primary
     public DataSource dataSource(DataSourceProperties properties) {
-        String databaseUrl = System.getenv("DATABASE_URL");
+        String databaseUrl = System.getenv("SPRING_DATASOURCE_URL");
         if (databaseUrl == null || databaseUrl.isBlank()) {
-            databaseUrl = System.getenv("SPRING_DATASOURCE_URL");
+            databaseUrl = System.getenv("DATABASE_URL");
         }
         if (databaseUrl == null || databaseUrl.isBlank()) {
             databaseUrl = properties.getUrl();
@@ -63,7 +63,7 @@ public class DatabaseConfig {
                 config.setConnectionTimeout(20000);
                 config.setMaxLifetime(1200000);
 
-                log.info("Configured HikariDataSource for PostgreSQL host={}:{} path={}", host, port, path);
+                log.info("[DATABASE TARGET] PostgreSQL host={}, port={}, path={}, username={}", host, port, path, config.getUsername());
                 return new HikariDataSource(config);
             } catch (Exception e) {
                 log.error("Failed to parse URI database string '{}', falling back to standard DataSource: {}", databaseUrl, e.getMessage());
