@@ -58,6 +58,9 @@ public class AdminController {
         this.auditService = auditService;
     }
 
+    /**
+     * @return
+     */
     @GetMapping("/dashboard")
     @Operation(summary = "Get admin dashboard overview", description = "Global financial and system logistics metrics")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getDashboard() {
@@ -66,8 +69,9 @@ public class AdminController {
         List<EscrowAccount> allEscrows = escrowAccountRepository.findAll();
         List<EscrowLedger> allLedgers = escrowLedgerRepository.findAll();
 
-        BigDecimal totalProjectValue = allDeals.stream()
-                .map(Deal::getTotalAmount)
+        final BigDecimal totalProjectValue = allDeals.stream()
+                .map
+                )
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 

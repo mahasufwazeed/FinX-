@@ -55,6 +55,11 @@ app.use('/api/disputes', disputeRoutes);
 
 
 
+app.use((req, res, next) => {
+    console.warn(`[404 DEBUG] Frontend requested missing route: ${req.method} ${req.url}`);
+    res.status(404).json({ message: "Not Found" });
+});
+
 app.listen(PORT, async () => {
     await connectRedis();
     console.log(`🚀 Server running on port ${PORT}`);
