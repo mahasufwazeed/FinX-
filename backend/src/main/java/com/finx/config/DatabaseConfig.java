@@ -71,6 +71,10 @@ public class DatabaseConfig {
         }
 
         // Standard JDBC connection (e.g. jdbc:h2:mem:finx_test_db or jdbc:postgresql://...)
+        if (databaseUrl != null && databaseUrl.startsWith("jdbc:postgresql://")) {
+            String sanitized = databaseUrl.replaceAll("(?i)password=[^&;]*", "password=***");
+            log.info("[DATABASE TARGET] Standard JDBC URL={}, username={}", sanitized, properties.getUsername());
+        }
         return properties.initializeDataSourceBuilder().build();
     }
 }

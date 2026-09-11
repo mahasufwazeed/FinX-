@@ -30,9 +30,11 @@ spring:
 
   data:
     redis:
+      url: ${SPRING_DATA_REDIS_URL:${REDIS_URL:}}
       host: ${SPRING_DATA_REDIS_HOST:localhost}
       port: ${SPRING_DATA_REDIS_PORT:6379}
       password: ${SPRING_DATA_REDIS_PASSWORD:}
+      timeout: 2000ms
 
 # Google OAuth 2.0 Production Defaults (Never fallback to localhost in prod)
 oauth:

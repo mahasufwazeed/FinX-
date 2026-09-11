@@ -54,7 +54,7 @@ public class FlywayConfig {
                     log.warn("[FLYWAY RECOVERY] 'users' table is missing while schema history exists! " +
                             "Clearing invalid/failed history records for V1 and V2 to allow clean initialization...");
                     try {
-                        int deleted = stmt.executeUpdate("DELETE FROM flyway_schema_history WHERE version IN ('1', '2')");
+                        int deleted = stmt.executeUpdate("DELETE FROM flyway_schema_history WHERE version IN ('1', '2') OR type = 'BASELINE'");
                         log.info("[FLYWAY RECOVERY] Cleared {} invalid history record(s)", deleted);
                     } catch (Exception ex) {
                         log.warn("[FLYWAY RECOVERY] Could not delete invalid history records: {}", ex.getMessage());
