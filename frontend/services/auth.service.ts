@@ -13,10 +13,13 @@ export const authService = {
     },
 
     register: async (userData: Record<string, any>): Promise<AuthResponse> => {
-        // Map frontend display roles to backend roles
+        // Map frontend display roles to authoritative backend roles
         let backendRole = userData.role;
-        if (backendRole === "CORPORATE") backendRole = "BUYER";
-        if (backendRole === "VENDOR") backendRole = "SELLER";
+        if (backendRole === "CORPORATE" || backendRole === "PROJECT_MANAGER" || backendRole === "FINANCE") {
+            backendRole = "BUYER";
+        } else if (backendRole === "VENDOR") {
+            backendRole = "SELLER";
+        }
 
         const payload = {
             name: userData.fullName || userData.name,

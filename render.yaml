@@ -56,6 +56,8 @@ services:
     buildCommand: npm install && npm run build
     startCommand: npm run start
     envVars:
+      - key: NODE_VERSION
+        value: "20.18.0"
       - key: NEXT_PUBLIC_API_URL
         value: "https://finx-backend-vq5b.onrender.com/api"
       - key: PORT

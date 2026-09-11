@@ -41,9 +41,10 @@ public class GoogleOAuthProperties {
 
         String activeProfile = System.getProperty("spring.profiles.active", System.getenv("SPRING_PROFILES_ACTIVE"));
         if (activeProfile != null && (activeProfile.contains("prod") || activeProfile.contains("production"))) {
-            if (this.redirectUri == null || this.redirectUri.trim().isEmpty() || this.redirectUri.contains("localhost")) {
+            if (this.redirectUri == null || this.redirectUri.trim().isEmpty() || this.redirectUri.contains("localhost") || 
+                (this.redirectUri.contains("finx-backend.onrender.com") && !this.redirectUri.contains("-vq5b"))) {
                 this.redirectUri = "https://finx-backend-vq5b.onrender.com/api/auth/google/callback";
-                log.info("[OAUTH CONFIGURATION] Production profile active: resolved redirectUri to Render: {}", this.redirectUri);
+                log.info("[OAUTH CONFIGURATION] Production profile active: resolved redirectUri to canonical Render URL: {}", this.redirectUri);
             }
             if (this.frontendRedirectUrl == null || this.frontendRedirectUrl.trim().isEmpty() || this.frontendRedirectUrl.contains("localhost")) {
                 this.frontendRedirectUrl = "https://finx-frontend.onrender.com/auth/callback/google";
