@@ -8,19 +8,22 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import Link from "next/link";
-import { ShieldCheck, CheckCircle2, ChevronRight } from "lucide-react";
+import { ShieldCheck, CheckCircle2 } from "lucide-react";
 import axios from "axios";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+
+const PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]).*$/;
 
 const registerSchema = z.object({
     fullName: z.string().trim().min(2, { message: "Name must be at least 2 characters" }),
     email: z.string().trim().email({ message: "Invalid email address" }),
     password: z.string()
         .min(8, { message: "Password must be at least 8 characters" })
-        .regex(/^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!._-]).*$/, {
+        .max(100, { message: "Password must be at most 100 characters" })
+        .regex(PASSWORD_REGEX, {
             message: "Password must contain at least one digit, one lowercase letter, one uppercase letter, and one special character"
         }),
-    confirmPassword: z.string(),
+    confirmPassword: z.string().min(1, { message: "Please confirm your password" }),
     role: z.enum(["CORPORATE", "VENDOR", "PROJECT_MANAGER", "FINANCE"], { required_error: "Please select a role" }),
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -44,6 +47,41 @@ export default function RegisterPage() {
     });
 
     const selectedRole = watch("role");
+    const passwordValue = watch("password") || "";
+    const confirmPasswordValue = watch("confirmPassword") || "";
+
+    const passwordCriteria = [
+        {
+            id: "length",
+            label: "8+ characters",
+            met: passwordValue.length >= 8 && passwordValue.length <= 100,
+        },
+        {
+            id: "uppercase",
+            label: "One uppercase letter",
+            met: /[A-Z]/.test(passwordValue),
+        },
+        {
+            id: "lowercase",
+            label: "One lowercase letter",
+            met: /[a-z]/.test(passwordValue),
+        },
+        {
+            id: "number",
+            label: "One number",
+            met: /[0-9]/.test(passwordValue),
+        },
+        {
+            id: "special",
+            label: "One special character",
+            met: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(passwordValue),
+        },
+        {
+            id: "match",
+            label: "Passwords match",
+            met: passwordValue.length > 0 && passwordValue === confirmPasswordValue,
+        },
+    ];
 
     const onSubmit = async (data: RegisterFormValues) => {
         setError(null);
@@ -182,6 +220,33 @@ export default function RegisterPage() {
                                     {...register("confirmPassword")}
                                     error={errors.confirmPassword?.message}
                                 />
+                            </div>
+
+                            {/* Live Password Requirements Checklist */}
+                            <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-3 text-xs space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="font-semibold text-slate-700">Password requirements:</span>
+                                    <span className="text-[11px] text-slate-400">Updates live</span>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {passwordCriteria.map((item) => (
+                                        <div
+                                            key={item.id}
+                                            className={`flex items-center gap-1.5 transition-colors duration-150 ${
+                                                item.met ? "text-emerald-700 font-medium" : "text-slate-500"
+                                            }`}
+                                        >
+                                            {item.met ? (
+                                                <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+                                            ) : (
+                                                <div className="w-3.5 h-3.5 rounded-full border border-slate-300 shrink-0 flex items-center justify-center">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                                                </div>
+                                            )}
+                                            <span>{item.label}</span>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
 
                             <div className="space-y-2 pt-2">
