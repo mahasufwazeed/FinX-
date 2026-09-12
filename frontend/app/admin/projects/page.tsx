@@ -129,7 +129,7 @@ export default function AdminProjectsPage() {
                                     placeholder="Search by deal title or ID..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                             </div>
 
@@ -138,15 +138,15 @@ export default function AdminProjectsPage() {
                                 <select
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value)}
-                                    className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                    className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                                 >
-                                    <option value="ALL">All Statuses</option>
-                                    <option value="ACTIVE">ACTIVE</option>
-                                    <option value="PENDING_ACCEPTANCE">PENDING_ACCEPTANCE</option>
-                                    <option value="DRAFT">DRAFT</option>
-                                    <option value="COMPLETED">COMPLETED</option>
-                                    <option value="CANCELLED">CANCELLED</option>
-                                    <option value="DISPUTED">DISPUTED</option>
+                                    <option value="ALL" className="text-slate-900 bg-white">All Statuses</option>
+                                    <option value="ACTIVE" className="text-slate-900 bg-white">ACTIVE</option>
+                                    <option value="PENDING_ACCEPTANCE" className="text-slate-900 bg-white">PENDING_ACCEPTANCE</option>
+                                    <option value="DRAFT" className="text-slate-900 bg-white">DRAFT</option>
+                                    <option value="COMPLETED" className="text-slate-900 bg-white">COMPLETED</option>
+                                    <option value="CANCELLED" className="text-slate-900 bg-white">CANCELLED</option>
+                                    <option value="DISPUTED" className="text-slate-900 bg-white">DISPUTED</option>
                                 </select>
                             </div>
                         </div>

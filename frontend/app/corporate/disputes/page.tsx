@@ -177,14 +177,14 @@ export default function BuyerDisputesPage() {
                                         Select Contested Deal
                                     </label>
                                     <select
-                                        className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                        className="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
                                         value={selectedDealId}
                                         onChange={(e) => setSelectedDealId(e.target.value)}
                                         required
                                     >
-                                        <option value="">-- Choose Deal --</option>
+                                        <option value="" className="text-slate-900 bg-white">-- Choose Deal --</option>
                                         {deals.map(d => (
-                                            <option key={d.id} value={d.id}>
+                                            <option key={d.id} value={d.id} className="text-slate-900 bg-white">
                                                 {d.title} (${Number(d.totalAmount).toLocaleString()} - {d.status})
                                             </option>
                                         ))}
@@ -196,7 +196,7 @@ export default function BuyerDisputesPage() {
                                         Contestation Grounds & Detailed Reason
                                     </label>
                                     <textarea
-                                        className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                        className="w-full border border-slate-300 rounded-lg p-3 text-sm bg-white text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 outline-none"
                                         rows={4}
                                         placeholder="Detail deliverable deficiencies, non-performance, or contractual breach..."
                                         value={reason}

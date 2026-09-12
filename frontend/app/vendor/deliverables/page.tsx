@@ -150,10 +150,10 @@ export default function VendorDeliverablesPage() {
                                     <select
                                         value={selectedDealId}
                                         onChange={e => setSelectedDealId(e.target.value)}
-                                        className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     >
                                         {deals.map(d => (
-                                            <option key={d.id} value={d.id}>
+                                            <option key={d.id} value={d.id} className="text-slate-900 bg-white">
                                                 {d.title} (₹{d.totalAmount?.toLocaleString()} {d.currency || 'INR'} - {d.status})
                                             </option>
                                         ))}
@@ -171,10 +171,10 @@ export default function VendorDeliverablesPage() {
                                     <select
                                         value={selectedMilestoneId}
                                         onChange={e => setSelectedMilestoneId(e.target.value)}
-                                        className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     >
                                         {milestones.map(m => (
-                                            <option key={m.id} value={m.id}>
+                                            <option key={m.id} value={m.id} className="text-slate-900 bg-white">
                                                 {m.title} (₹{m.amount?.toLocaleString()} {m.currency || 'INR'} — Status: {m.status})
                                             </option>
                                         ))}
@@ -203,7 +203,7 @@ export default function VendorDeliverablesPage() {
                                     value={description}
                                     onChange={e => setDescription(e.target.value)}
                                     rows={4}
-                                    className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     placeholder="Provide completion details, test reports, or pull request links for the corporate client..."
                                 />
                             </div>

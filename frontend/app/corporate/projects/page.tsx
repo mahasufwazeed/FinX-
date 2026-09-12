@@ -149,14 +149,14 @@ export default function CorporateProjectsPage() {
                             <div className="relative max-w-sm w-full">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                 <input
-                                    className="pl-10 h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="pl-10 h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     placeholder="Search by title..."
                                     value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}
                                 />
                             </div>
                             <select
-                                className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 value={statusFilter}
                                 onChange={e => setStatusFilter(e.target.value as any)}
                             >
@@ -270,7 +270,7 @@ export default function CorporateProjectsPage() {
                                         required
                                         value={description}
                                         onChange={e => setDescription(e.target.value)}
-                                        className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[80px]"
+                                        className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[80px]"
                                         placeholder="Project details..."
                                     />
                                 </div>
@@ -292,9 +292,9 @@ export default function CorporateProjectsPage() {
                                         <select
                                             value={currency}
                                             onChange={e => setCurrency(e.target.value)}
-                                            className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         >
-                                            <option value="INR">INR</option>
+                                            <option value="INR" className="text-slate-900 bg-white">INR</option>
                                         </select>
                                     </div>
                                 </div>
@@ -329,10 +329,10 @@ export default function CorporateProjectsPage() {
                                                 const s = sellers.find(x => x.id === e.target.value);
                                                 if (s && !vendorEmail) setVendorEmail(s.email);
                                             }}
-                                            className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         >
                                             {sellers.map((s) => (
-                                                <option key={s.id} value={s.id}>
+                                                <option key={s.id} value={s.id} className="text-slate-900 bg-white">
                                                     {s.name} ({s.uid || s.id.substring(0, 8)})
                                                 </option>
                                             ))}

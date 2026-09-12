@@ -174,7 +174,7 @@ export default function DisputesPage() {
                                     Resolution Ruling & Notes
                                 </label>
                                 <textarea
-                                    className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full border border-slate-300 rounded-lg p-3 text-sm bg-white text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 outline-none"
                                     rows={4}
                                     placeholder="State findings, escrow disburse/refund decision, and compliance grounds..."
                                     value={resolutionNotes}

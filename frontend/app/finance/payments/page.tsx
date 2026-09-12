@@ -100,7 +100,7 @@ export default function FinancePaymentsPage() {
                                     placeholder="Search by Payment ID, Razorpay Order/Payment ID..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                             </div>
 
@@ -109,12 +109,12 @@ export default function FinancePaymentsPage() {
                                 <select
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value)}
-                                    className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                    className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                                 >
-                                    <option value="ALL">All Payment Statuses</option>
-                                    <option value="SUCCESS">SUCCESS</option>
-                                    <option value="PENDING">PENDING</option>
-                                    <option value="FAILED">FAILED</option>
+                                    <option value="ALL" className="text-slate-900 bg-white">All Payment Statuses</option>
+                                    <option value="SUCCESS" className="text-slate-900 bg-white">SUCCESS</option>
+                                    <option value="PENDING" className="text-slate-900 bg-white">PENDING</option>
+                                    <option value="FAILED" className="text-slate-900 bg-white">FAILED</option>
                                 </select>
                             </div>
                         </div>

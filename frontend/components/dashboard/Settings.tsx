@@ -194,35 +194,35 @@ export const FINXSettings = () => {
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Theme</label>
                                 <select
-                                    className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     value={preferences.theme}
                                     onChange={e => setPreferences({ ...preferences, theme: e.target.value })}
                                 >
-                                    <option value="light">Light Mode (Default)</option>
-                                    <option value="dark">Dark Mode</option>
-                                    <option value="system">System Default</option>
+                                    <option value="light" className="text-slate-900 bg-white">Light Mode (Default)</option>
+                                    <option value="dark" className="text-slate-900 bg-white">Dark Mode</option>
+                                    <option value="system" className="text-slate-900 bg-white">System Default</option>
                                 </select>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Interface Language</label>
                                 <select
-                                    className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     value={preferences.language}
                                     onChange={e => setPreferences({ ...preferences, language: e.target.value })}
                                 >
-                                    <option value="en-US">English (US)</option>
-                                    <option value="es-ES">Spanish</option>
-                                    <option value="fr-FR">French</option>
+                                    <option value="en-US" className="text-slate-900 bg-white">English (US)</option>
+                                    <option value="es-ES" className="text-slate-900 bg-white">Spanish</option>
+                                    <option value="fr-FR" className="text-slate-900 bg-white">French</option>
                                 </select>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Default Display Currency</label>
                                 <select
-                                    className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     value={preferences.currency}
                                     onChange={e => setPreferences({ ...preferences, currency: e.target.value })}
                                 >
-                                    <option value="INR">INR (₹)</option>
+                                    <option value="INR" className="text-slate-900 bg-white">INR (₹)</option>
                                 </select>
                             </div>
                             <div className="pt-4 border-t border-slate-100">

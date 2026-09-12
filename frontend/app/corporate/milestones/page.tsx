@@ -74,36 +74,36 @@ export default function CorporateMilestonesPage() {
                             <div className="relative max-w-xs w-full">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                 <input
-                                    className="pl-10 h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="pl-10 h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     placeholder="Search milestones..."
                                     value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}
                                 />
                             </div>
                             <select
-                                className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 value={selectedDealId}
                                 onChange={e => setSelectedDealId(e.target.value)}
                             >
-                                <option value="ALL">All Deals / Projects</option>
+                                <option value="ALL" className="text-slate-900 bg-white">All Deals / Projects</option>
                                 {deals.map(d => (
-                                    <option key={d.id} value={d.id}>{d.title}</option>
+                                    <option key={d.id} value={d.id} className="text-slate-900 bg-white">{d.title}</option>
                                 ))}
                             </select>
                             <select
-                                className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 value={statusFilter}
                                 onChange={e => setStatusFilter(e.target.value as any)}
                             >
-                                <option value="ALL">All Statuses</option>
-                                <option value="PENDING">Pending</option>
-                                <option value="IN_PROGRESS">In Progress</option>
-                                <option value="SUBMITTED">Submitted</option>
-                                <option value="UNDER_REVIEW">Under Review</option>
-                                <option value="APPROVED">Approved</option>
-                                <option value="REJECTED">Rejected</option>
-                                <option value="COMPLETED">Completed</option>
-                                <option value="CANCELLED">Cancelled</option>
+                                <option value="ALL" className="text-slate-900 bg-white">All Statuses</option>
+                                <option value="PENDING" className="text-slate-900 bg-white">Pending</option>
+                                <option value="IN_PROGRESS" className="text-slate-900 bg-white">In Progress</option>
+                                <option value="SUBMITTED" className="text-slate-900 bg-white">Submitted</option>
+                                <option value="UNDER_REVIEW" className="text-slate-900 bg-white">Under Review</option>
+                                <option value="APPROVED" className="text-slate-900 bg-white">Approved</option>
+                                <option value="REJECTED" className="text-slate-900 bg-white">Rejected</option>
+                                <option value="COMPLETED" className="text-slate-900 bg-white">Completed</option>
+                                <option value="CANCELLED" className="text-slate-900 bg-white">Cancelled</option>
                             </select>
                         </div>
                         <Button variant="outline" size="sm" onClick={fetchMilestones} disabled={isLoading} className="gap-2 text-slate-600">

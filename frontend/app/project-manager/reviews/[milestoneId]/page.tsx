@@ -143,7 +143,7 @@ export default function MilestoneReviewDetail() {
                             <h3 className="text-lg font-bold text-slate-900 mb-2">Request Revisions</h3>
                             <p className="text-sm text-slate-600 mb-4">The vendor will be notified to revise their upload.</p>
                             <textarea
-                                className="w-full border border-slate-300 rounded p-3 min-h-[100px] mb-4 text-sm focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full border border-slate-300 rounded p-3 min-h-[100px] mb-4 text-sm bg-white text-slate-900 placeholder:text-slate-400 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="Enter specific required changes..."
                                 value={reason}
                                 onChange={e => setReason(e.target.value)}
@@ -162,7 +162,7 @@ export default function MilestoneReviewDetail() {
                             <h3 className="text-lg font-bold text-red-600 mb-2">Final Rejection</h3>
                             <p className="text-sm text-slate-600 mb-4">This terminates the current delivery trajectory. Legal comments required.</p>
                             <textarea
-                                className="w-full border border-slate-300 rounded p-3 min-h-[100px] mb-4 text-sm focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full border border-slate-300 rounded p-3 min-h-[100px] mb-4 text-sm bg-white text-slate-900 placeholder:text-slate-400 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="State explicit rejection reasons..."
                                 value={reason}
                                 onChange={e => setReason(e.target.value)}
