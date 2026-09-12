@@ -55,7 +55,7 @@ export default function FundMilestoneCheckout() {
                 // 3. Open real Razorpay checkout
                 const options = {
                     key: order.keyId,
-                    amount: order.amount,
+                    amount: Math.round(Number(order.amount) * 100),
                     currency: order.currency || "INR",
                     name: "FINX Escrow Platform",
                     description: `Escrow funding for ${order.milestoneTitle || milestone.title}`,

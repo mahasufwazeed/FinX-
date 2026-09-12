@@ -167,4 +167,26 @@ class DealServiceTest {
         assertThat(deals).hasSize(1);
         assertThat(deals.get(0).getTitle()).isEqualTo("Buyer Deal");
     }
+
+    @Test
+    @DisplayName("Successfully create deal when seller is referenced by UID (USR-XXXX)")
+    void createDeal_SuccessWithVendorUid() {
+        seller.setUid("USR-ABCD12");
+        CreateDealRequest request = new CreateDealRequest();
+        request.setSellerId("USR-ABCD12");
+        request.setTitle("Vendor UID Deal");
+        request.setTotalAmount(new BigDecimal("15000.00"));
+        request.setCurrency("INR");
+
+        when(userRepository.findByUidIgnoreCase("USR-ABCD12")).thenReturn(Optional.of(seller));
+        when(userRepository.findById(buyer.getId())).thenReturn(Optional.of(buyer));
+        when(dealRepository.saveAndFlush(any(Deal.class))).thenAnswer(invocation -> {
+            Deal d = invocation.getArgument(0);
+            d.setId(UUID.randomUUID());
+            return d;
+        });
+
+        DealResponse response = dealService.createDeal(request, buyerPrincipal);
+        assertThat(response.getSellerId()).isEqualTo(seller.getId());
+    }
 }

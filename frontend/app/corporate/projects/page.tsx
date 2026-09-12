@@ -77,8 +77,8 @@ export default function CorporateProjectsPage() {
                 description,
                 totalAmount: parseFloat(amount),
                 currency,
-                sellerId: sellerId || undefined as any,
-                vendorEmail: vendorEmail || undefined
+                sellerId: (sellerId || "").trim(),
+                vendorEmail: (vendorEmail || "").trim() || undefined
             };
             await dealService.createDeal(request);
             setIsCreateModalOpen(false);
