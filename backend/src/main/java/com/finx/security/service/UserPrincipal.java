@@ -7,11 +7,14 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.UUID;
 
 public class UserPrincipal implements UserDetails {
+
+    private static final long serialVersionUID = 1L;
 
     private final UUID id;
     private final String name;
@@ -19,7 +22,7 @@ public class UserPrincipal implements UserDetails {
     private final String password;
     private final Role role;
     private final UserStatus status;
-    private final Collection<? extends GrantedAuthority> authorities;
+    private final Collection<GrantedAuthority> authorities;
 
     public UserPrincipal(UUID id, String name, String email, String password, Role role, UserStatus status,
                          Collection<? extends GrantedAuthority> authorities) {
@@ -29,7 +32,7 @@ public class UserPrincipal implements UserDetails {
         this.password = password;
         this.role = role;
         this.status = status;
-        this.authorities = authorities;
+        this.authorities = authorities != null ? Collections.unmodifiableList(new ArrayList<>(authorities)) : Collections.emptyList();
     }
 
     public static UserPrincipal create(User user) {
@@ -66,7 +69,7 @@ public class UserPrincipal implements UserDetails {
     }
 
     @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
+    public Collection<GrantedAuthority> getAuthorities() {
         return authorities;
     }
 
