@@ -61,7 +61,9 @@ class AuthEndToEndTest {
                 .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.data.refreshToken").isNotEmpty())
                 .andExpect(jsonPath("$.data.user.email").value(email))
-                .andExpect(jsonPath("$.data.user.role").value("BUYER"));
+                .andExpect(jsonPath("$.data.user.role").value("BUYER"))
+                .andExpect(jsonPath("$.data.user.uid").isNotEmpty())
+                .andExpect(jsonPath("$.data.user.uid").value(org.hamcrest.Matchers.matchesPattern("^USR-[0-9A-F]{8}$")));
 
         // 2. Attempt duplicate email registration -> should fail with 409 Conflict
         mockMvc.perform(post("/api/auth/register")
@@ -107,6 +109,7 @@ class AuthEndToEndTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.email").value(email))
+                .andExpect(jsonPath("$.data.uid").value(org.hamcrest.Matchers.matchesPattern("^USR-[0-9A-F]{8}$")))
                 .andExpect(jsonPath("$.data.role").value("BUYER"));
 
         // 7. Access protected /api/auth/me without token -> 401 Unauthorized
@@ -135,7 +138,8 @@ class AuthEndToEndTest {
         mockMvc.perform(get("/api/auth/me")
                         .header("Authorization", "Bearer " + newAccessToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.email").value(email));
+                .andExpect(jsonPath("$.data.email").value(email))
+                .andExpect(jsonPath("$.data.uid").value(org.hamcrest.Matchers.matchesPattern("^USR-[0-9A-F]{8}$")));
 
         // 10. Attempt to reuse OLD refresh token -> 401 Unauthorized (revoked)
         mockMvc.perform(post("/api/auth/refresh")

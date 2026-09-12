@@ -97,7 +97,7 @@ public class DealService {
         }
 
         if (seller == null) {
-            throw new ResourceNotFoundException("Seller", "id/uid", sellerInput);
+            throw new BadRequestException("Vendor UID not found: " + sellerInput);
         }
 
         if (buyerId.equals(seller.getId())) {
