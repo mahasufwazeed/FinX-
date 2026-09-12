@@ -34,6 +34,10 @@ public class EscrowAccount {
     @Column(name = "status", nullable = false, length = 50)
     private EscrowAccountStatus status = EscrowAccountStatus.ACTIVE;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -90,6 +94,14 @@ public class EscrowAccount {
 
     public void setStatus(EscrowAccountStatus status) {
         this.status = status;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
     }
 
     public Instant getCreatedAt() {

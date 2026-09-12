@@ -29,8 +29,8 @@ public class RazorpayProperties {
             } else {
                 log.warn("[PAYMENT CONFIGURATION] Razorpay keys not configured.");
             }
-            log.warn("Running in SANDBOX / TEST MODE with fallback HMAC-SHA256 signature verification.");
-            log.warn("To connect live Razorpay payments, configure RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.");
+            log.warn("Payments and webhook verification are disabled until Razorpay credentials are configured.");
+            log.warn("Configure RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, and RAZORPAY_WEBHOOK_SECRET before accepting payments.");
             log.warn("================================================================================");
         } else {
             log.info("================================================================================");
@@ -64,10 +64,7 @@ public class RazorpayProperties {
     }
 
     public String getWebhookSecret() {
-        if (webhookSecret != null && !webhookSecret.trim().isEmpty()) {
-            return webhookSecret;
-        }
-        return keySecret;
+        return webhookSecret;
     }
 
     public void setWebhookSecret(String webhookSecret) {
@@ -83,9 +80,6 @@ public class RazorpayProperties {
     }
 
     public boolean isSandboxMode() {
-        if (!isConfigured()) {
-            return true;
-        }
         return sandboxMode;
     }
 

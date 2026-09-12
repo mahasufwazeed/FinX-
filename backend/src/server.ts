@@ -1,3 +1,5 @@
+throw new Error('The legacy Node/Prisma backend is disabled. Start the authoritative Spring Boot backend instead.');
+
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';

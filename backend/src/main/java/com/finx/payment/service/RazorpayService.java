@@ -1,6 +1,7 @@
 package com.finx.payment.service;
 
 import com.finx.payment.config.RazorpayProperties;
+import com.finx.exception.PaymentGatewayUnavailableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -20,8 +21,6 @@ import java.util.UUID;
 public class RazorpayService {
 
     private static final Logger log = LoggerFactory.getLogger(RazorpayService.class);
-    private static final String DEFAULT_TEST_SECRET = "finx_razorpay_hmac_test_secret_key_12345";
-
     private final RazorpayProperties properties;
     private final RestClient restClient;
 
@@ -33,39 +32,38 @@ public class RazorpayService {
     }
 
     public String createOrder(BigDecimal amount, String currency, String receipt) {
+        requirePaymentCredentials();
         long amountInSubunits = amount.multiply(BigDecimal.valueOf(100)).longValue();
 
-        if (properties.isConfigured() && !properties.isSandboxMode()) {
-            try {
-                log.info("Initiating live Razorpay order creation: amount={} {} receipt={}", amount, currency, receipt);
-                Map<String, Object> body = Map.of(
-                        "amount", amountInSubunits,
-                        "currency", currency != null ? currency.toUpperCase() : properties.getCurrency(),
-                        "receipt", receipt
-                );
+        try {
+            log.info("Initiating Razorpay {} order: amount={} {} receipt={}",
+                    properties.isSandboxMode() ? "test" : "live", amount, currency, receipt);
+            Map<String, Object> body = Map.of(
+                    "amount", amountInSubunits,
+                    "currency", currency != null ? currency.toUpperCase() : properties.getCurrency(),
+                    "receipt", receipt
+            );
 
-                Map<?, ?> response = restClient.post()
-                        .uri("/orders")
-                        .headers(headers -> headers.setBasicAuth(properties.getKeyId(), properties.getKeySecret()))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(body)
-                        .retrieve()
-                        .body(Map.class);
+            Map<?, ?> response = restClient.post()
+                    .uri("/orders")
+                    .headers(headers -> headers.setBasicAuth(properties.getKeyId(), properties.getKeySecret()))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .body(Map.class);
 
-                if (response != null && response.containsKey("id")) {
-                    String orderId = String.valueOf(response.get("id"));
-                    log.info("Live Razorpay order created successfully: {}", orderId);
-                    return orderId;
-                }
-            } catch (Exception e) {
-                log.error("Failed to create live Razorpay order, falling back to secure sandbox test order: {}", e.getMessage());
+            if (response != null && response.containsKey("id")) {
+                String orderId = String.valueOf(response.get("id"));
+                log.info("Razorpay order created successfully: {}", orderId);
+                return orderId;
             }
+            throw new PaymentGatewayUnavailableException("Razorpay did not return an order ID.");
+        } catch (PaymentGatewayUnavailableException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Razorpay order creation failed", e);
+            throw new PaymentGatewayUnavailableException("Razorpay is unavailable. No payment order was created.", e);
         }
-
-        // Sandbox / Test Mode Order Generation
-        String sandboxOrderId = "order_test_" + UUID.randomUUID().toString().replace("-", "").substring(0, 14);
-        log.info("Created sandbox/test Razorpay order: {}", sandboxOrderId);
-        return sandboxOrderId;
     }
 
     public boolean verifyPaymentSignature(String orderId, String paymentId, String signature) {
@@ -74,7 +72,8 @@ public class RazorpayService {
             return false;
         }
 
-        String secret = properties.isConfigured() ? properties.getKeySecret() : DEFAULT_TEST_SECRET;
+        requirePaymentCredentials();
+        String secret = properties.getKeySecret();
         String payload = orderId + "|" + paymentId;
 
         String expectedSignature = calculateHmacSha256(payload, secret);
@@ -83,16 +82,6 @@ public class RazorpayService {
                 expectedSignature.getBytes(StandardCharsets.UTF_8),
                 signature.trim().getBytes(StandardCharsets.UTF_8)
         );
-
-        // Also allow recognized test signature tokens in sandbox mode
-        if (!signatureMatches && properties.isSandboxMode()) {
-            if ("test_signature".equalsIgnoreCase(signature.trim()) ||
-                signature.trim().startsWith("sig_test_") ||
-                signature.trim().startsWith("mock_sig_")) {
-                log.info("Sandbox test signature accepted for orderId={}", orderId);
-                return true;
-            }
-        }
 
         if (signatureMatches) {
             log.info("Razorpay cryptographic HMAC-SHA256 signature verified for orderId={}", orderId);
@@ -104,8 +93,8 @@ public class RazorpayService {
     }
 
     public String generateTestSignature(String orderId, String paymentId) {
-        String secret = properties.isConfigured() ? properties.getKeySecret() : DEFAULT_TEST_SECRET;
-        return calculateHmacSha256(orderId + "|" + paymentId, secret);
+        requirePaymentCredentials();
+        return calculateHmacSha256(orderId + "|" + paymentId, properties.getKeySecret());
     }
 
     public String calculateHmacSha256(String data, String secret) {
@@ -127,7 +116,7 @@ public class RazorpayService {
 
         String secret = properties.getWebhookSecret();
         if (secret == null || secret.isBlank()) {
-            secret = DEFAULT_TEST_SECRET;
+            throw new PaymentGatewayUnavailableException("Razorpay webhook secret is not configured.");
         }
 
         String expectedSignature = calculateHmacSha256(payload, secret);
@@ -136,22 +125,17 @@ public class RazorpayService {
                 signature.trim().getBytes(StandardCharsets.UTF_8)
         );
 
-        if (!matches && properties.isSandboxMode()) {
-            if ("test_webhook_signature".equalsIgnoreCase(signature.trim()) ||
-                signature.trim().startsWith("sig_test_") ||
-                signature.trim().startsWith("webhook_test_")) {
-                log.info("Sandbox test webhook signature accepted");
-                return true;
-            }
-        }
-
         return matches;
     }
 
     public String getPublicKey() {
-        if (properties.getKeyId() != null && !properties.getKeyId().trim().isEmpty()) {
-            return properties.getKeyId();
+        requirePaymentCredentials();
+        return properties.getKeyId();
+    }
+
+    private void requirePaymentCredentials() {
+        if (!properties.isConfigured()) {
+            throw new PaymentGatewayUnavailableException("Razorpay is not configured. Payments cannot be initiated or verified.");
         }
-        return "rzp_test_finx_sandbox";
     }
 }

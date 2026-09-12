@@ -102,10 +102,10 @@ class EscrowServiceTest {
     @Test
     @DisplayName("Release escrow funds for approved milestone successfully")
     void releaseEscrow_success() {
-        when(milestoneRepository.findById(milestoneId)).thenReturn(Optional.of(milestone));
-        when(dealRepository.findById(dealId)).thenReturn(Optional.of(deal));
+        when(milestoneRepository.findByIdForUpdate(milestoneId)).thenReturn(Optional.of(milestone));
+        when(dealRepository.findByIdForUpdate(dealId)).thenReturn(Optional.of(deal));
         when(escrowLedgerRepository.findByMilestoneIdAndTransactionType(milestoneId, TransactionType.RELEASE)).thenReturn(Optional.empty());
-        when(escrowAccountRepository.findByDealId(dealId)).thenReturn(Optional.of(escrowAccount));
+        when(escrowAccountRepository.findByDealIdForUpdate(dealId)).thenReturn(Optional.of(escrowAccount));
         when(escrowAccountRepository.saveAndFlush(any(EscrowAccount.class))).thenAnswer(i -> i.getArgument(0));
         when(escrowLedgerRepository.saveAndFlush(any(EscrowLedger.class))).thenAnswer(i -> {
             EscrowLedger l = i.getArgument(0);
@@ -130,8 +130,8 @@ class EscrowServiceTest {
     void releaseEscrow_fails_whenNotApproved() {
         milestone.setStatus(MilestoneStatus.IN_PROGRESS);
 
-        when(milestoneRepository.findById(milestoneId)).thenReturn(Optional.of(milestone));
-        when(dealRepository.findById(dealId)).thenReturn(Optional.of(deal));
+        when(milestoneRepository.findByIdForUpdate(milestoneId)).thenReturn(Optional.of(milestone));
+        when(dealRepository.findByIdForUpdate(dealId)).thenReturn(Optional.of(deal));
 
         assertThatThrownBy(() -> escrowService.releaseEscrow(milestoneId, "Release", buyerPrincipal))
                 .isInstanceOf(BadRequestException.class)
@@ -143,8 +143,8 @@ class EscrowServiceTest {
     void releaseEscrow_doubleReleasePrevention() {
         EscrowLedger priorRelease = new EscrowLedger(escrowAccount.getId(), null, milestoneId, TransactionType.RELEASE, BigDecimal.valueOf(10000), BigDecimal.ZERO, "Prior release");
 
-        when(milestoneRepository.findById(milestoneId)).thenReturn(Optional.of(milestone));
-        when(dealRepository.findById(dealId)).thenReturn(Optional.of(deal));
+        when(milestoneRepository.findByIdForUpdate(milestoneId)).thenReturn(Optional.of(milestone));
+        when(dealRepository.findByIdForUpdate(dealId)).thenReturn(Optional.of(deal));
         when(escrowLedgerRepository.findByMilestoneIdAndTransactionType(milestoneId, TransactionType.RELEASE)).thenReturn(Optional.of(priorRelease));
 
         assertThatThrownBy(() -> escrowService.releaseEscrow(milestoneId, "Release", buyerPrincipal))
@@ -157,10 +157,10 @@ class EscrowServiceTest {
     void releaseEscrow_insufficientBalance() {
         escrowAccount.setBalance(BigDecimal.valueOf(5000)); // milestone is 10000
 
-        when(milestoneRepository.findById(milestoneId)).thenReturn(Optional.of(milestone));
-        when(dealRepository.findById(dealId)).thenReturn(Optional.of(deal));
+        when(milestoneRepository.findByIdForUpdate(milestoneId)).thenReturn(Optional.of(milestone));
+        when(dealRepository.findByIdForUpdate(dealId)).thenReturn(Optional.of(deal));
         when(escrowLedgerRepository.findByMilestoneIdAndTransactionType(milestoneId, TransactionType.RELEASE)).thenReturn(Optional.empty());
-        when(escrowAccountRepository.findByDealId(dealId)).thenReturn(Optional.of(escrowAccount));
+        when(escrowAccountRepository.findByDealIdForUpdate(dealId)).thenReturn(Optional.of(escrowAccount));
 
         assertThatThrownBy(() -> escrowService.releaseEscrow(milestoneId, "Release", buyerPrincipal))
                 .isInstanceOf(BadRequestException.class)

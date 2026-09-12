@@ -63,11 +63,15 @@ export default function FundMilestoneCheckout() {
                     handler: async function (response: any) {
                         setIsVerifying(true);
                         try {
+                            if (!response.razorpay_order_id || !response.razorpay_payment_id || !response.razorpay_signature) {
+                                throw new Error("Razorpay did not return the payment verification details.");
+                            }
+
                             await paymentService.verifyPayment({
                                 paymentId: order.paymentId,
-                                razorpayOrderId: response.razorpay_order_id || order.orderId,
-                                razorpayPaymentId: response.razorpay_payment_id || `pay_${Date.now()}`,
-                                razorpaySignature: response.razorpay_signature || "test_signature"
+                                razorpayOrderId: response.razorpay_order_id,
+                                razorpayPaymentId: response.razorpay_payment_id,
+                                razorpaySignature: response.razorpay_signature
                             });
                             setSuccess(true);
                             setTimeout(() => {
@@ -101,18 +105,8 @@ export default function FundMilestoneCheckout() {
                 });
                 rzp.open();
             } else {
-                // Fallback direct verification for headless / test runner environments
-                setIsVerifying(true);
-                await paymentService.verifyPayment({
-                    paymentId: order.paymentId,
-                    razorpayOrderId: order.orderId,
-                    razorpayPaymentId: `pay_sandbox_${Date.now()}`,
-                    razorpaySignature: "test_signature"
-                });
-                setSuccess(true);
-                setTimeout(() => {
-                    router.push(`/corporate/projects/${projectId}`);
-                }, 2000);
+                setError("Razorpay Checkout could not be loaded. No payment was verified or credited to escrow.");
+                setIsProcessing(false);
             }
         } catch (err: any) {
             setError(err.response?.data?.message || err.message || "Failed to initialize payment order");

@@ -9,7 +9,10 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Entity
-@Table(name = "escrow_ledger", indexes = {
+@Table(name = "escrow_ledger", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_escrow_ledger_payment_id", columnNames = "payment_id"),
+        @UniqueConstraint(name = "uk_escrow_ledger_milestone_type", columnNames = {"milestone_id", "transaction_type"})
+}, indexes = {
         @Index(name = "idx_escrow_ledger_account_id", columnList = "escrow_account_id"),
         @Index(name = "idx_escrow_ledger_milestone_id", columnList = "milestone_id"),
         @Index(name = "idx_escrow_ledger_type", columnList = "transaction_type"),

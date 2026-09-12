@@ -2,9 +2,13 @@
 const { Pool } = require("pg");
 const crypto = require("crypto");
 
-const pool = new Pool({
-  connectionString: "postgresql://postgres.rhmoxuwxbsxezubrvmkj:pwjsEDhWKVFLc9qz@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres",
-});
+const connectionString = process.env.BACKFILL_DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error("BACKFILL_DATABASE_URL must be set before running this maintenance script.");
+}
+
+const pool = new Pool({ connectionString });
 
 async function run() {
   const client = await pool.connect();

@@ -7,6 +7,8 @@ import com.finx.milestone.dto.request.CreateMilestoneRequest;
 import com.finx.milestone.dto.request.SubmitDeliverableRequest;
 import com.finx.payment.dto.request.CreateOrderRequest;
 import com.finx.payment.dto.request.VerifyPaymentRequest;
+import com.finx.payment.config.RazorpayTestConfiguration;
+import com.finx.payment.service.RazorpayService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +16,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -29,7 +32,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("local")
+@ActiveProfiles("test")
+@Import(RazorpayTestConfiguration.class)
 class SecurityHardenedTest {
 
     @Autowired
@@ -37,6 +41,9 @@ class SecurityHardenedTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private RazorpayService razorpayService;
 
     @SuppressWarnings("unused")
     private static class RegisteredUser {
@@ -204,11 +211,12 @@ class SecurityHardenedTest {
         String orderId = orderJson.get("data").get("orderId").asText();
 
         // 17. IDOR TEST: Buyer B attempts to verify Buyer A's payment -> 401 Unauthorized
+        String razorpayPaymentId = "pay_sec_" + ts;
         VerifyPaymentRequest verifyReq = new VerifyPaymentRequest(
                 paymentId,
                 orderId,
-                "pay_sec_" + ts,
-                "test_signature"
+                razorpayPaymentId,
+                razorpayService.generateTestSignature(orderId, razorpayPaymentId)
         );
 
         mockMvc.perform(post("/api/payments/verify")

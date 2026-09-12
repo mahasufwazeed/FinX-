@@ -105,7 +105,7 @@ class PaymentServiceTest {
         CreateOrderRequest req = new CreateOrderRequest(dealId, milestoneId);
 
         when(dealRepository.findById(dealId)).thenReturn(Optional.of(deal));
-        when(milestoneRepository.findById(milestoneId)).thenReturn(Optional.of(milestone));
+        when(milestoneRepository.findByIdForUpdate(milestoneId)).thenReturn(Optional.of(milestone));
         when(paymentRepository.findByMilestoneIdAndStatus(milestoneId, PaymentStatus.SUCCESS)).thenReturn(Optional.empty());
         when(razorpayService.createOrder(any(), any(), any())).thenReturn("order_test_12345");
         when(razorpayService.getPublicKey()).thenReturn("rzp_test_key");
@@ -130,7 +130,7 @@ class PaymentServiceTest {
 
         VerifyPaymentRequest req = new VerifyPaymentRequest(payment.getId(), "order_test_12345", "pay_test_999", "sig_valid");
 
-        when(paymentRepository.findById(payment.getId())).thenReturn(Optional.of(payment));
+        when(paymentRepository.findByIdForUpdate(payment.getId())).thenReturn(Optional.of(payment));
         when(razorpayService.verifyPaymentSignature("order_test_12345", "pay_test_999", "sig_valid")).thenReturn(true);
         when(paymentRepository.saveAndFlush(any(Payment.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -149,13 +149,30 @@ class PaymentServiceTest {
 
         VerifyPaymentRequest req = new VerifyPaymentRequest(payment.getId(), "order_test_12345", "pay_test_999", "fraudulent_sig");
 
-        when(paymentRepository.findById(payment.getId())).thenReturn(Optional.of(payment));
+        when(paymentRepository.findByIdForUpdate(payment.getId())).thenReturn(Optional.of(payment));
         when(razorpayService.verifyPaymentSignature("order_test_12345", "pay_test_999", "fraudulent_sig")).thenReturn(false);
 
         assertThatThrownBy(() -> paymentService.verifyPayment(req, buyerPrincipal))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("Invalid payment signature");
 
+        verify(escrowService, never()).fundEscrow(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Reject a valid signature submitted for a different Razorpay order")
+    void verifyPayment_rejectsMismatchedOrder() {
+        Payment payment = new Payment(dealId, milestoneId, buyerId, BigDecimal.valueOf(10000), "INR", "order_test_12345", null);
+        payment.setId(UUID.randomUUID());
+        VerifyPaymentRequest req = new VerifyPaymentRequest(payment.getId(), "order_test_other", "pay_test_999", "sig_valid");
+
+        when(paymentRepository.findByIdForUpdate(payment.getId())).thenReturn(Optional.of(payment));
+
+        assertThatThrownBy(() -> paymentService.verifyPayment(req, buyerPrincipal))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("does not match");
+
+        verify(razorpayService, never()).verifyPaymentSignature(any(), any(), any());
         verify(escrowService, never()).fundEscrow(any(), any(), any(), any(), any(), any());
     }
 
@@ -169,7 +186,7 @@ class PaymentServiceTest {
         String signature = "valid_sig";
 
         when(razorpayService.verifyWebhookSignature(payload, signature)).thenReturn(true);
-        when(paymentRepository.findByProviderOrderId("order_webhook_123")).thenReturn(Optional.of(payment));
+        when(paymentRepository.findByProviderOrderIdForUpdate("order_webhook_123")).thenReturn(Optional.of(payment));
         when(paymentRepository.saveAndFlush(any(Payment.class))).thenAnswer(i -> i.getArgument(0));
 
         java.util.Map<String, Object> result = paymentService.processWebhook(payload, signature);
@@ -190,7 +207,7 @@ class PaymentServiceTest {
         String signature = "valid_sig";
 
         when(razorpayService.verifyWebhookSignature(payload, signature)).thenReturn(true);
-        when(paymentRepository.findByProviderOrderId("order_webhook_dup")).thenReturn(Optional.of(payment));
+        when(paymentRepository.findByProviderOrderIdForUpdate("order_webhook_dup")).thenReturn(Optional.of(payment));
 
         java.util.Map<String, Object> result = paymentService.processWebhook(payload, signature);
 
@@ -210,6 +227,6 @@ class PaymentServiceTest {
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("Invalid webhook signature");
 
-        verify(paymentRepository, never()).findByProviderOrderId(any());
+        verify(paymentRepository, never()).findByProviderOrderIdForUpdate(any());
     }
 }

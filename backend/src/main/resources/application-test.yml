@@ -24,3 +24,8 @@ jwt:
 
 rate-limit:
   enabled: false
+
+razorpay:
+  key-id: rzp_test_finx_fixture
+  key-secret: finx_test_only_hmac_fixture
+  webhook-secret: finx_test_only_webhook_fixture

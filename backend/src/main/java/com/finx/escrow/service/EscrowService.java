@@ -59,7 +59,7 @@ public class EscrowService {
 
     @Transactional
     public EscrowAccount getOrCreateEscrowAccount(UUID dealId, String currency) {
-        return escrowAccountRepository.findByDealId(dealId).orElseGet(() -> {
+        return escrowAccountRepository.findByDealIdForUpdate(dealId).orElseGet(() -> {
             EscrowAccount account = new EscrowAccount(dealId, BigDecimal.ZERO, currency);
             return escrowAccountRepository.saveAndFlush(account);
         });
@@ -105,6 +105,8 @@ public class EscrowService {
 
     @Transactional
     public void fundEscrow(UUID dealId, UUID milestoneId, UUID paymentId, BigDecimal amount, String currency, UUID actorId) {
+        Deal deal = dealRepository.findByIdForUpdate(dealId)
+                .orElseThrow(() -> new ResourceNotFoundException("Deal", "id", dealId));
         EscrowAccount account = getOrCreateEscrowAccount(dealId, currency);
 
         BigDecimal newBalance = account.getBalance().add(amount);
@@ -130,25 +132,22 @@ public class EscrowService {
                 "Funded " + amount + " " + currency + " into escrow account for deal " + dealId
         );
 
-        Deal deal = dealRepository.findById(dealId).orElse(null);
-        if (deal != null) {
-            notificationService.sendNotification(
-                    deal.getSellerId(),
-                    "Escrow Funded",
-                    "Buyer deposited " + amount + " " + currency + " into escrow for milestone progress.",
-                    "/vendor/projects/" + dealId
-            );
-        }
+        notificationService.sendNotification(
+                deal.getSellerId(),
+                "Escrow Funded",
+                "Buyer deposited " + amount + " " + currency + " into escrow for milestone progress.",
+                "/vendor/projects/" + dealId
+        );
 
         log.info("Escrow funded: dealId={} amount={} newBalance={}", dealId, amount, newBalance);
     }
 
     @Transactional
     public EscrowLedgerResponse releaseEscrow(UUID milestoneId, String comment, UserPrincipal currentUser) {
-        Milestone milestone = milestoneRepository.findById(milestoneId)
+        Milestone milestone = milestoneRepository.findByIdForUpdate(milestoneId)
                 .orElseThrow(() -> new ResourceNotFoundException("Milestone", "id", milestoneId));
 
-        Deal deal = dealRepository.findById(milestone.getDealId())
+        Deal deal = dealRepository.findByIdForUpdate(milestone.getDealId())
                 .orElseThrow(() -> new ResourceNotFoundException("Deal", "id", milestone.getDealId()));
 
         if (currentUser.getRole() != Role.ADMIN && !deal.getBuyerId().equals(currentUser.getId())) {
@@ -165,7 +164,7 @@ public class EscrowService {
             throw new BadRequestException("Escrow funds for milestone '" + milestone.getTitle() + "' have already been released.");
         }
 
-        EscrowAccount account = escrowAccountRepository.findByDealId(deal.getId())
+        EscrowAccount account = escrowAccountRepository.findByDealIdForUpdate(deal.getId())
                 .orElseThrow(() -> new BadRequestException("No escrow account found for this deal"));
 
         if (account.getBalance().compareTo(milestone.getAmount()) < 0) {

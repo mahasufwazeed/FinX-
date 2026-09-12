@@ -9,6 +9,8 @@ import com.finx.milestone.dto.request.CreateMilestoneRequest;
 import com.finx.milestone.dto.request.SubmitDeliverableRequest;
 import com.finx.payment.dto.request.CreateOrderRequest;
 import com.finx.payment.dto.request.VerifyPaymentRequest;
+import com.finx.payment.config.RazorpayTestConfiguration;
+import com.finx.payment.service.RazorpayService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +18,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -30,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Import(RazorpayTestConfiguration.class)
 class TransactionEngineEndToEndTest {
 
     @Autowired
@@ -37,6 +41,9 @@ class TransactionEngineEndToEndTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private RazorpayService razorpayService;
 
     @Test
     @DisplayName("Complete Thursday E2E Transaction Engine: Deal -> Milestone -> Deliverable -> Approve -> Pay -> Escrow Fund -> Release -> Double-Release Protection")
@@ -165,11 +172,12 @@ class TransactionEngineEndToEndTest {
         UUID paymentId = UUID.fromString(orderJson.get("data").get("paymentId").asText());
 
         // 10. Buyer Verifies Payment -> Escrow Account & Ledger Funded
+        String razorpayPaymentId = "pay_test_txn_" + timestamp;
         VerifyPaymentRequest verifyReq = new VerifyPaymentRequest(
                 paymentId,
                 orderId,
-                "pay_test_txn_" + timestamp,
-                "test_signature"
+                razorpayPaymentId,
+                razorpayService.generateTestSignature(orderId, razorpayPaymentId)
         );
         mockMvc.perform(post("/api/payments/verify")
                         .header("Authorization", "Bearer " + buyerToken)

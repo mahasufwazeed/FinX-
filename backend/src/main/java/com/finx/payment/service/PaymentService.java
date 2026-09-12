@@ -66,7 +66,7 @@ public class PaymentService {
         Deal deal = dealRepository.findById(request.getDealId())
                 .orElseThrow(() -> new ResourceNotFoundException("Deal", "id", request.getDealId()));
 
-        Milestone milestone = milestoneRepository.findById(request.getMilestoneId())
+        Milestone milestone = milestoneRepository.findByIdForUpdate(request.getMilestoneId())
                 .orElseThrow(() -> new ResourceNotFoundException("Milestone", "id", request.getMilestoneId()));
 
         if (!milestone.getDealId().equals(deal.getId())) {
@@ -88,6 +88,11 @@ public class PaymentService {
             Optional<Payment> existingIdempotent = paymentRepository.findByIdempotencyKey(request.getIdempotencyKey());
             if (existingIdempotent.isPresent()) {
                 Payment p = existingIdempotent.get();
+                if (!p.getBuyerId().equals(currentUser.getId()) ||
+                        !p.getDealId().equals(deal.getId()) ||
+                        !p.getMilestoneId().equals(milestone.getId())) {
+                    throw new BadRequestException("This idempotency key is already associated with a different payment.");
+                }
                 return new CreateOrderResponse(
                         razorpayService.getPublicKey(),
                         p.getProviderOrderId(),
@@ -98,6 +103,20 @@ public class PaymentService {
                         milestone.getTitle()
                 );
             }
+        }
+
+        Optional<Payment> existingPending = paymentRepository.findByMilestoneIdAndStatus(milestone.getId(), PaymentStatus.PENDING);
+        if (existingPending.isPresent()) {
+            Payment p = existingPending.get();
+            return new CreateOrderResponse(
+                    razorpayService.getPublicKey(),
+                    p.getProviderOrderId(),
+                    p.getAmount(),
+                    p.getCurrency(),
+                    p.getId(),
+                    deal.getTitle(),
+                    milestone.getTitle()
+            );
         }
 
         String receipt = "rcpt_" + milestone.getId().toString().substring(0, 8);
@@ -138,11 +157,15 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponse verifyPayment(VerifyPaymentRequest request, UserPrincipal currentUser) {
-        Payment payment = paymentRepository.findById(request.getPaymentId())
+        Payment payment = paymentRepository.findByIdForUpdate(request.getPaymentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Payment", "id", request.getPaymentId()));
 
         if (currentUser != null && currentUser.getRole() != Role.ADMIN && !payment.getBuyerId().equals(currentUser.getId())) {
             throw new UnauthorizedException("Only the corporate buyer who initiated this payment can verify it");
+        }
+
+        if (!payment.getProviderOrderId().equals(request.getRazorpayOrderId())) {
+            throw new BadRequestException("Payment verification order does not match the initiated payment order.");
         }
 
         if (payment.getStatus() == PaymentStatus.SUCCESS) {
@@ -151,7 +174,7 @@ public class PaymentService {
         }
 
         boolean isValid = razorpayService.verifyPaymentSignature(
-                request.getRazorpayOrderId(),
+                payment.getProviderOrderId(),
                 request.getRazorpayPaymentId(),
                 request.getRazorpaySignature()
         );
@@ -259,7 +282,7 @@ public class PaymentService {
                 return Map.of("status", "acknowledged", "event", event);
             }
 
-            Optional<Payment> paymentOpt = paymentRepository.findByProviderOrderId(orderId);
+            Optional<Payment> paymentOpt = paymentRepository.findByProviderOrderIdForUpdate(orderId);
             if (paymentOpt.isEmpty()) {
                 log.warn("Webhook received for unknown orderId: {}", orderId);
                 return Map.of("status", "order_not_found", "orderId", orderId);

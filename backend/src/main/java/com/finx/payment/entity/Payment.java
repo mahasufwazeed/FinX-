@@ -42,7 +42,7 @@ public class Payment {
     @Column(name = "provider", nullable = false, length = 50)
     private String provider = "RAZORPAY";
 
-    @Column(name = "provider_order_id")
+    @Column(name = "provider_order_id", unique = true)
     private String providerOrderId;
 
     @Column(name = "provider_payment_id")

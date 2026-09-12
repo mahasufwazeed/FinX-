@@ -3,8 +3,19 @@
  * Tests complete lifecycle against backend (http://localhost:8080) and frontend (http://localhost:3000)
  */
 
+import crypto from 'node:crypto';
+
 const BACKEND_URL = 'http://localhost:8080/api';
 const FRONTEND_URL = 'http://localhost:3000';
+const RAZORPAY_PAYMENT_SECRET = process.env.FINX_E2E_RAZORPAY_KEY_SECRET;
+const RAZORPAY_WEBHOOK_SECRET = process.env.FINX_E2E_RAZORPAY_WEBHOOK_SECRET;
+
+function hmacSignature(payload, secret, dependencyName) {
+    if (!secret) {
+        throw new Error(`BLOCKED — DEPENDENCY: ${dependencyName} is required for a real Razorpay sandbox verification.`);
+    }
+    return crypto.createHmac('sha256', secret).update(payload).digest('hex');
+}
 
 async function request(url, options = {}) {
     const headers = {
@@ -278,7 +289,7 @@ async function runTests() {
 
         // 15. Corporate Initiates Razorpay Payment Order
         console.log('\n--- Phase 15: Razorpay Payment Order Creation ---');
-        const paymentOrderRes = await request(`${BACKEND_URL}/payments/orders`, {
+        const paymentOrderRes = await request(`${BACKEND_URL}/payments/create-order`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${activeCorpToken}` },
             body: JSON.stringify({
@@ -302,7 +313,11 @@ async function runTests() {
                 paymentId: orderData.paymentId,
                 razorpayOrderId: orderData.orderId,
                 razorpayPaymentId: paymentTxnId,
-                razorpaySignature: 'test_signature'
+                razorpaySignature: hmacSignature(
+                    `${orderData.orderId}|${paymentTxnId}`,
+                    RAZORPAY_PAYMENT_SECRET,
+                    'FINX_E2E_RAZORPAY_KEY_SECRET'
+                )
             })
         });
         assert(verifyPaymentRes.ok, `Payment verified successfully (got ${verifyPaymentRes.status})`);
@@ -554,7 +569,7 @@ async function runTests() {
                 paymentId: orderData.paymentId,
                 razorpayOrderId: orderData.orderId,
                 razorpayPaymentId: 'pay_hijack_test',
-                razorpaySignature: 'test_signature'
+                razorpaySignature: 'invalid_signature'
             })
         });
         assert(buyerBVerifyPaymentRes.status === 401 || buyerBVerifyPaymentRes.status === 403, `Security: Cross-buyer payment verification hijacking is rejected (got ${buyerBVerifyPaymentRes.status})`);
@@ -777,7 +792,7 @@ async function runTests() {
         });
         const wbkMilestoneId = wbkMilestoneRes.data?.data?.id;
 
-        const wbkOrderRes = await request(`${BACKEND_URL}/payments/orders`, {
+        const wbkOrderRes = await request(`${BACKEND_URL}/payments/create-order`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${activeCorpToken}` },
             body: JSON.stringify({
@@ -807,7 +822,11 @@ async function runTests() {
         const wbkSuccessRes = await request(`${BACKEND_URL}/payments/webhook`, {
             method: 'POST',
             headers: {
-                'X-Razorpay-Signature': 'test_webhook_signature'
+                'X-Razorpay-Signature': hmacSignature(
+                    validPayload,
+                    RAZORPAY_WEBHOOK_SECRET,
+                    'FINX_E2E_RAZORPAY_WEBHOOK_SECRET'
+                )
             },
             body: validPayload
         });
@@ -824,7 +843,11 @@ async function runTests() {
         const duplicateWbkRes = await request(`${BACKEND_URL}/payments/webhook`, {
             method: 'POST',
             headers: {
-                'X-Razorpay-Signature': 'test_webhook_signature'
+                'X-Razorpay-Signature': hmacSignature(
+                    validPayload,
+                    RAZORPAY_WEBHOOK_SECRET,
+                    'FINX_E2E_RAZORPAY_WEBHOOK_SECRET'
+                )
             },
             body: validPayload
         });
