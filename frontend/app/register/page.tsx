@@ -83,8 +83,11 @@ export default function RegisterPage() {
         },
     ];
 
+    const [isPending, setIsPending] = useState<boolean>(false);
+
     const onSubmit = async (data: RegisterFormValues) => {
         setError(null);
+        setIsPending(true);
         try {
             await registerAction({
                 name: data.fullName,
@@ -93,24 +96,62 @@ export default function RegisterPage() {
                 role: data.role,
             });
             setSuccess(true);
-        } catch (err) {
-            // @ts-expect-error type any
-            const errorResponse = err.response?.data?.message || err.message || "";
-            if (err instanceof TypeError || errorResponse.toLowerCase().includes('network')) {
+        } catch (err: unknown) {
+            // @ts-expect-error axios / error inspection
+            const code = err?.code;
+            // @ts-expect-error axios / error inspection
+            const status = err?.response?.status;
+            // @ts-expect-error axios / error inspection
+            const data = err?.response?.data;
+            // @ts-expect-error axios / error inspection
+            const message = data?.message || data?.error || err?.message || "";
+
+            // Check for timeout
+            if (code === 'ECONNABORTED' || message.toLowerCase().includes('timeout') || message.toLowerCase().includes('taking longer')) {
+                setError("Registration is taking longer than expected. Please try again.");
+                return;
+            }
+
+            // Check for network failure / unreachable backend
+            if (err instanceof TypeError || message.toLowerCase().includes('network') || (axios.isAxiosError(err) && !err.response)) {
                 setError("Unable to connect to FINX. Please check your connection and try again.");
-            } else if (axios.isAxiosError(err) && err.response?.status === 409) {
+                return;
+            }
+
+            // Handle duplicate email
+            if (status === 409) {
                 setError("This email is already registered. Please sign in.");
-            } else if (axios.isAxiosError(err) && err.response?.status === 400) {
-                const backendErrors = err.response?.data?.errors;
-                if (backendErrors && typeof backendErrors === 'object') {
-                    const firstError = Object.values(backendErrors)[0];
+                return;
+            }
+
+            // Handle validation errors
+            if (status === 400) {
+                const validationErrors = data?.validationErrors || data?.errors;
+                if (validationErrors && typeof validationErrors === 'object') {
+                    const firstError = Object.values(validationErrors)[0];
                     setError(firstError as string);
                 } else {
-                    setError(errorResponse || "Validation failed. Please check your inputs.");
+                    setError(message || "Validation failed. Please check your inputs.");
                 }
-            } else {
-                setError(errorResponse || "Failed to create account. Please try again.");
+                return;
             }
+
+            // Handle unauthorized / forbidden
+            if (status === 401 || status === 403) {
+                setError(message || "Registration not permitted for this role.");
+                return;
+            }
+
+            // Handle 5xx server errors
+            if (status && status >= 500) {
+                setError("The server encountered an error processing your registration. Please try again shortly.");
+                return;
+            }
+
+            // Generic fallback without exposing stack traces
+            setError(message || "Failed to create account. Please try again.");
+        } finally {
+            setIsPending(false);
         }
     };
 
@@ -288,7 +329,14 @@ export default function RegisterPage() {
                                 {errors.role && <p className="mt-1 text-sm text-red-500">{errors.role.message}</p>}
                             </div>
 
-                            <Button type="submit" className="w-full mt-6" isLoading={isSubmitting} disabled={isSubmitting}>
+                            {error && (
+                                <div className="mt-4 bg-red-50 text-red-600 p-3 rounded-md text-sm border border-red-100 flex items-start gap-2">
+                                    <div className="mt-0.5">⚠️</div>
+                                    <p>{error}</p>
+                                </div>
+                            )}
+
+                            <Button type="submit" className="w-full mt-6" isLoading={isPending} disabled={isPending}>
                                 Create Account
                             </Button>
                         </form>

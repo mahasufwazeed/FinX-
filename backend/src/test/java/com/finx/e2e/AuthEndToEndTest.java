@@ -166,6 +166,67 @@ class AuthEndToEndTest {
     }
 
     @Test
+    @DisplayName("Verify registration works for all supported roles and aliases (BUYER, SELLER, CORPORATE, VENDOR, PROJECT_MANAGER, FINANCE)")
+    void testRegistrationWithAllSupportedRolesAndAliases() throws Exception {
+        String password = "StrongPassword123!";
+
+        // 1. BUYER
+        String buyerEmail = "test.buyer@finx.com";
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Buyer User\",\"email\":\"" + buyerEmail + "\",\"password\":\"" + password + "\",\"role\":\"BUYER\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.user.role").value("BUYER"));
+
+        // 2. SELLER
+        String sellerEmail = "test.seller@finx.com";
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Seller User\",\"email\":\"" + sellerEmail + "\",\"password\":\"" + password + "\",\"role\":\"SELLER\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.user.role").value("SELLER"));
+
+        // 3. CORPORATE alias (maps to BUYER)
+        String corporateEmail = "test.corporate@finx.com";
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Corporate User\",\"email\":\"" + corporateEmail + "\",\"password\":\"" + password + "\",\"role\":\"CORPORATE\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.user.role").value("BUYER"));
+
+        // 4. VENDOR alias (maps to SELLER)
+        String vendorEmail = "test.vendor@finx.com";
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Vendor User\",\"email\":\"" + vendorEmail + "\",\"password\":\"" + password + "\",\"role\":\"VENDOR\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.user.role").value("SELLER"));
+
+        // 5. PROJECT_MANAGER
+        String pmEmail = "test.pm@finx.com";
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"PM User\",\"email\":\"" + pmEmail + "\",\"password\":\"" + password + "\",\"role\":\"PROJECT_MANAGER\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.user.role").value("PROJECT_MANAGER"));
+
+        // 6. FINANCE
+        String financeEmail = "test.finance@finx.com";
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Finance User\",\"email\":\"" + financeEmail + "\",\"password\":\"" + password + "\",\"role\":\"FINANCE\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.user.role").value("FINANCE"));
+
+        // 7. Invalid role -> 400 Bad Request
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Invalid User\",\"email\":\"invalid.role@finx.com\",\"password\":\"" + password + "\",\"role\":\"SUPERUSER\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
     @DisplayName("Health endpoint returns UP status")
     void testHealthEndpoint() throws Exception {
         mockMvc.perform(get("/api/health"))
