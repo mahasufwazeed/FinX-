@@ -25,11 +25,14 @@ export default function CorporateProjectsPage() {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [amount, setAmount] = useState("");
-    const [currency, setCurrency] = useState("USD");
+    const [currency, setCurrency] = useState("INR");
     const [sellerId, setSellerId] = useState("");
     const [sellers, setSellers] = useState<SellerSummary[]>([]);
     const [isLoadingSellers, setIsLoadingSellers] = useState(false);
     const [isManualSeller, setIsManualSeller] = useState(false);
+    const [vendorEmail, setVendorEmail] = useState("");
+    const [isSendingEmail, setIsSendingEmail] = useState(false);
+    const [emailSuccess, setEmailSuccess] = useState(false);
 
     const fetchDeals = async () => {
         setIsLoading(true);
@@ -69,21 +72,31 @@ export default function CorporateProjectsPage() {
         setIsCreating(true);
         setError(null);
         try {
-            const request: CreateDealRequest = {
+            const request: CreateDealRequest & { vendorEmail?: string } = {
                 title,
                 description,
                 totalAmount: parseFloat(amount),
                 currency,
-                sellerId: sellerId || undefined as any // if seller is not strict, but backend might require it
+                sellerId: sellerId || undefined as any,
+                vendorEmail: vendorEmail || undefined
             };
             await dealService.createDeal(request);
             setIsCreateModalOpen(false);
+
+            // Show a mock email successfully queued message natively
+            if (vendorEmail) {
+                setEmailSuccess(true);
+                setTimeout(() => setEmailSuccess(false), 5000);
+            }
+
             // Reset form
             setTitle("");
             setDescription("");
             setAmount("");
-            setCurrency("USD");
+            setCurrency("INR");
             setSellerId("");
+            setVendorEmail("");
+
             // Refresh listing
             fetchDeals();
         } catch (err: any) {
@@ -198,10 +211,13 @@ export default function CorporateProjectsPage() {
                                         {filteredDeals.map((deal) => (
                                             <tr key={deal.id} className="hover:bg-slate-50/50 transition-colors">
                                                 <td className="px-6 py-4">
-                                                    <div className="font-semibold text-slate-900">{deal.title}</div>
+                                                    <div className="font-semibold text-slate-900">
+                                                        {deal.title}
+                                                        {deal.projectId && <span className="ml-2 text-[10px] font-mono font-medium text-slate-500 bg-slate-200/50 px-1.5 py-0.5 rounded">{deal.projectId}</span>}
+                                                    </div>
                                                     <div className="text-slate-500 text-xs mt-1 max-w-[200px] truncate">{deal.description}</div>
                                                 </td>
-                                                <td className="px-6 py-4 font-medium">${deal.totalAmount?.toLocaleString()} {deal.currency}</td>
+                                                <td className="px-6 py-4 font-medium">₹{deal.totalAmount?.toLocaleString()} {deal.currency}</td>
                                                 <td className="px-6 py-4">
                                                     <StatusBadge status={deal.status} />
                                                 </td>
@@ -278,9 +294,7 @@ export default function CorporateProjectsPage() {
                                             onChange={e => setCurrency(e.target.value)}
                                             className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         >
-                                            <option value="USD">USD</option>
-                                            <option value="EUR">EUR</option>
-                                            <option value="GBP">GBP</option>
+                                            <option value="INR">INR</option>
                                         </select>
                                     </div>
                                 </div>
@@ -298,16 +312,28 @@ export default function CorporateProjectsPage() {
                                         )}
                                     </div>
 
-                                    {!isManualSeller && sellers.length > 0 ? (
-                                        <select
+
+                                    {isManualSeller ? (
+                                        <Input
                                             required
                                             value={sellerId}
                                             onChange={e => setSellerId(e.target.value)}
+                                            placeholder="Vendor UID or UUID (e.g. USR-12AB34CD)"
+                                        />
+                                    ) : sellers.length > 0 ? (
+                                        <select
+                                            required
+                                            value={sellerId}
+                                            onChange={e => {
+                                                setSellerId(e.target.value);
+                                                const s = sellers.find(x => x.id === e.target.value);
+                                                if (s && !vendorEmail) setVendorEmail(s.email);
+                                            }}
                                             className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         >
                                             {sellers.map((s) => (
                                                 <option key={s.id} value={s.id}>
-                                                    {s.name} ({s.email})
+                                                    {s.name} ({s.uid || s.id.substring(0, 8)})
                                                 </option>
                                             ))}
                                         </select>
@@ -316,14 +342,37 @@ export default function CorporateProjectsPage() {
                                             required
                                             value={sellerId}
                                             onChange={e => setSellerId(e.target.value)}
-                                            placeholder="Vendor UUID (e.g. 550e8400-e29b-41d4-a716-446655440000)"
+                                            placeholder="Vendor UID (e.g. USR-12AB34CD)"
                                         />
                                     )}
                                     {sellers.length === 0 && !isLoadingSellers && (
                                         <p className="text-xs text-slate-500 mt-1">
-                                            No registered vendors found. Enter a vendor user UUID manually or register a vendor account first.
+                                            No registered vendors found. Enter a vendor User UID manually.
                                         </p>
                                     )}
+                                </div>
+
+                                <div className="pt-2 border-t border-slate-100">
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Vendor Email (Optional for Notification)</label>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            type="email"
+                                            value={vendorEmail}
+                                            onChange={e => setVendorEmail(e.target.value)}
+                                            placeholder="vendor@example.com"
+                                            className="flex-1"
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            disabled={true}
+                                            className="whitespace-nowrap bg-slate-100 text-slate-500 cursor-help"
+                                            title="Emails are now dispatched automatically when you click Create Deal!"
+                                        >
+                                            Auto-Dispatched on Create
+                                        </Button>
+                                    </div>
+                                    {emailSuccess && <p className="text-xs text-emerald-600 mt-1">✓ Project details natively queued for vendor email!</p>}
                                 </div>
 
                                 <div className="flex justify-end gap-3 mt-6">

@@ -15,8 +15,10 @@ import com.finx.user.entity.User;
 import com.finx.user.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.finx.deal.event.DealCreatedEvent;
 
 import java.util.List;
 import java.util.UUID;
@@ -31,12 +33,16 @@ public class DealService {
     private final UserRepository userRepository;
     private final AuditService auditService;
 
+    private final ApplicationEventPublisher eventPublisher;
+
     public DealService(DealRepository dealRepository,
                        UserRepository userRepository,
-                       AuditService auditService) {
+                       AuditService auditService,
+                       ApplicationEventPublisher eventPublisher) {
         this.dealRepository = dealRepository;
         this.userRepository = userRepository;
         this.auditService = auditService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -92,6 +98,11 @@ public class DealService {
 
         log.info("Deal created successfully: id={} buyer={} seller={} amount={}",
                 savedDeal.getId(), buyerId, seller.getId(), savedDeal.getTotalAmount());
+
+        if (request.getVendorEmail() != null && !request.getVendorEmail().trim().isEmpty()) {
+            eventPublisher.publishEvent(new DealCreatedEvent(savedDeal, request.getVendorEmail().trim()));
+            log.info("Published DealCreatedEvent for deal {}", savedDeal.getId());
+        }
 
         return DealResponse.fromEntity(savedDeal);
     }

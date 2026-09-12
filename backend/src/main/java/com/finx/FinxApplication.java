@@ -11,8 +11,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.nio.charset.StandardCharsets;
 
+import org.springframework.scheduling.annotation.EnableAsync;
+
 @SpringBootApplication
 @EnableJpaAuditing
+@EnableAsync
 public class FinxApplication {
 
     private static final Logger log = LoggerFactory.getLogger(FinxApplication.class);

@@ -23,6 +23,16 @@ public class Deal {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
+    @Column(name = "project_id", unique = true, updatable = false, length = 20)
+    private String projectId;
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.projectId == null) {
+            this.projectId = "PRJ-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        }
+    }
+
     @Column(name = "title", nullable = false)
     private String title;
 
@@ -39,7 +49,7 @@ public class Deal {
     private BigDecimal totalAmount;
 
     @Column(name = "currency", nullable = false, length = 10)
-    private String currency = "USD";
+    private String currency = "INR";
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 50)
@@ -62,7 +72,7 @@ public class Deal {
         this.buyerId = buyerId;
         this.sellerId = sellerId;
         this.totalAmount = totalAmount;
-        this.currency = (currency != null && !currency.isBlank()) ? currency.toUpperCase() : "USD";
+        this.currency = (currency != null && !currency.isBlank()) ? currency.toUpperCase() : "INR";
         this.status = (status != null) ? status : DealStatus.DRAFT;
     }
 
@@ -72,6 +82,14 @@ public class Deal {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     public String getTitle() {

@@ -20,6 +20,7 @@ public class CreateMilestoneRequest {
     @DecimalMin(value = "0.01", message = "Amount must be greater than zero")
     private BigDecimal amount;
 
+    @jakarta.validation.constraints.Pattern(regexp = "^(?i)INR$", message = "Currency must be INR")
     private String currency = "INR";
 
     private Instant dueDate;

@@ -2,6 +2,7 @@ export type Role = "CORPORATE" | "VENDOR" | "PROJECT_MANAGER" | "ADMIN" | "FINAN
 
 export interface User {
   id: string;
+  uid?: string;
   email: string;
   fullName?: string;
   name?: string;
@@ -12,6 +13,7 @@ export interface User {
 
 export interface SellerSummary {
   id: string;
+  uid?: string;
   name: string;
   email: string;
   role: Role;
@@ -72,6 +74,7 @@ export type DealStatus = 'DRAFT' | 'PENDING_ACCEPTANCE' | 'ACTIVE' | 'COMPLETED'
 
 export interface Deal {
   id: string;
+  projectId?: string;
   title: string;
   description: string;
   buyerId: string;
@@ -85,6 +88,7 @@ export interface Deal {
 
 export interface DealResponse {
   id: string;
+  projectId?: string;
   title: string;
   description: string;
   buyerId: string;

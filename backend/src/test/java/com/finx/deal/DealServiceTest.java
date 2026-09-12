@@ -43,6 +43,9 @@ class DealServiceTest {
     @Mock
     private AuditService auditService;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     private DealService dealService;
 
     private User buyer;
@@ -51,7 +54,7 @@ class DealServiceTest {
 
     @BeforeEach
     void setUp() {
-        dealService = new DealService(dealRepository, userRepository, auditService);
+        dealService = new DealService(dealRepository, userRepository, auditService, eventPublisher);
 
         buyer = new User("Buyer One", "buyer@finx.com", "hash", Role.BUYER, UserStatus.ACTIVE);
         buyer.setId(UUID.randomUUID());

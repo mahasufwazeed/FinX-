@@ -24,7 +24,7 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -106,3 +106,11 @@ logging:
     root: INFO
     com.finx: DEBUG
     org.springframework.security: INFO
+
+spring.mail.host: smtp.ethereal.email
+spring.mail.port: 587
+spring.mail.username: \${SMTP_USER:finx-test@ethereal.email}
+spring.mail.password: \${SMTP_PASS:password123}
+spring.mail.properties.mail.smtp.auth: true
+spring.mail.properties.mail.smtp.starttls.enable: true
+

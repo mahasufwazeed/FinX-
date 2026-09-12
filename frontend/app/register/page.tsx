@@ -15,7 +15,11 @@ import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 const registerSchema = z.object({
     fullName: z.string().trim().min(2, { message: "Name must be at least 2 characters" }),
     email: z.string().trim().email({ message: "Invalid email address" }),
-    password: z.string().min(8, { message: "Password must be at least 8 characters" }),
+    password: z.string()
+        .min(8, { message: "Password must be at least 8 characters" })
+        .regex(/^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!._-]).*$/, {
+            message: "Password must contain at least one digit, one lowercase letter, one uppercase letter, and one special character"
+        }),
     confirmPassword: z.string(),
     role: z.enum(["CORPORATE", "VENDOR", "PROJECT_MANAGER", "FINANCE"], { required_error: "Please select a role" }),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -45,7 +49,7 @@ export default function RegisterPage() {
         setError(null);
         try {
             await registerAction({
-                fullName: data.fullName,
+                name: data.fullName,
                 email: data.email,
                 password: data.password,
                 role: data.role,
@@ -58,8 +62,16 @@ export default function RegisterPage() {
                 setError("Unable to connect to FINX. Please check your connection and try again.");
             } else if (axios.isAxiosError(err) && err.response?.status === 409) {
                 setError("This email is already registered. Please sign in.");
+            } else if (axios.isAxiosError(err) && err.response?.status === 400) {
+                const backendErrors = err.response?.data?.errors;
+                if (backendErrors && typeof backendErrors === 'object') {
+                    const firstError = Object.values(backendErrors)[0];
+                    setError(firstError as string);
+                } else {
+                    setError(errorResponse || "Validation failed. Please check your inputs.");
+                }
             } else {
-                setError("Failed to create account. Please try again.");
+                setError(errorResponse || "Failed to create account. Please try again.");
             }
         }
     };

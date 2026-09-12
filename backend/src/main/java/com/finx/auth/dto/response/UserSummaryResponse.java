@@ -10,6 +10,7 @@ import java.util.UUID;
 public class UserSummaryResponse {
 
     private UUID id;
+    private String uid;
     private String name;
     private String email;
     private Role role;
@@ -19,8 +20,9 @@ public class UserSummaryResponse {
     public UserSummaryResponse() {
     }
 
-    public UserSummaryResponse(UUID id, String name, String email, Role role, UserStatus status, Instant createdAt) {
+    public UserSummaryResponse(UUID id, String uid, String name, String email, Role role, UserStatus status, Instant createdAt) {
         this.id = id;
+        this.uid = uid;
         this.name = name;
         this.email = email;
         this.role = role;
@@ -31,6 +33,7 @@ public class UserSummaryResponse {
     public static UserSummaryResponse fromEntity(User user) {
         return new UserSummaryResponse(
                 user.getId(),
+                user.getUid(),
                 user.getName(),
                 user.getEmail(),
                 user.getRole(),
@@ -45,6 +48,14 @@ public class UserSummaryResponse {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
     }
 
     public String getName() {

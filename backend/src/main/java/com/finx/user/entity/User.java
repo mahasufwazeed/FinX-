@@ -23,6 +23,16 @@ public class User {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
+    @Column(name = "uid", unique = true, updatable = false, length = 20)
+    private String uid;
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.uid == null) {
+            this.uid = "USR-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        }
+    }
+
     @Column(name = "name", nullable = false)
     private String name;
 
@@ -65,6 +75,14 @@ public class User {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
     }
 
     public String getName() {

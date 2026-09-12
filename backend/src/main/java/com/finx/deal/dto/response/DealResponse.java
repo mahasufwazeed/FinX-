@@ -10,6 +10,7 @@ import java.util.UUID;
 public class DealResponse {
 
     private UUID id;
+    private String projectId;
     private String title;
     private String description;
     private UUID buyerId;
@@ -23,10 +24,11 @@ public class DealResponse {
     public DealResponse() {
     }
 
-    public DealResponse(UUID id, String title, String description, UUID buyerId, UUID sellerId,
+    public DealResponse(UUID id, String projectId, String title, String description, UUID buyerId, UUID sellerId,
                         BigDecimal totalAmount, String currency, DealStatus status,
                         Instant createdAt, Instant updatedAt) {
         this.id = id;
+        this.projectId = projectId;
         this.title = title;
         this.description = description;
         this.buyerId = buyerId;
@@ -41,6 +43,7 @@ public class DealResponse {
     public static DealResponse fromEntity(Deal deal) {
         return new DealResponse(
                 deal.getId(),
+                deal.getProjectId(),
                 deal.getTitle(),
                 deal.getDescription(),
                 deal.getBuyerId(),
@@ -59,6 +62,14 @@ public class DealResponse {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     public String getTitle() {

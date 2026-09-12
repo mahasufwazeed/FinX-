@@ -17,7 +17,7 @@ export const FINXSettings = () => {
     const [preferences, setPreferences] = useState({
         theme: "light",
         language: "en-US",
-        currency: "USD",
+        currency: "INR",
         timezone: "UTC",
     });
 
@@ -89,6 +89,10 @@ export const FINXSettings = () => {
                         <CardContent className="mt-4 space-y-4">
                             <div className="bg-slate-50 p-4 rounded text-sm text-slate-500 mb-4 border border-slate-200">
                                 Profile updates are currently disabled pending the rollout of the Backend Profiles API.
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">User Tracker (UID)</label>
+                                <Input disabled value={user?.uid || "N/A"} className="font-mono bg-slate-50 text-slate-600" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
@@ -218,9 +222,7 @@ export const FINXSettings = () => {
                                     value={preferences.currency}
                                     onChange={e => setPreferences({ ...preferences, currency: e.target.value })}
                                 >
-                                    <option value="USD">USD ($)</option>
-                                    <option value="EUR">EUR (€)</option>
-                                    <option value="GBP">GBP (£)</option>
+                                    <option value="INR">INR (₹)</option>
                                 </select>
                             </div>
                             <div className="pt-4 border-t border-slate-100">

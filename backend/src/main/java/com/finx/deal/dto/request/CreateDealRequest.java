@@ -25,7 +25,10 @@ public class CreateDealRequest {
     @DecimalMin(value = "0.01", message = "Total amount must be at least 0.01")
     private BigDecimal totalAmount;
 
-    private String currency = "USD";
+    @jakarta.validation.constraints.Pattern(regexp = "^(?i)INR$", message = "Currency must be INR")
+    private String currency = "INR";
+    
+    private String vendorEmail;
 
     public CreateDealRequest() {
     }
@@ -85,5 +88,13 @@ public class CreateDealRequest {
 
     public void setCurrency(String currency) {
         this.currency = currency;
+    }
+
+    public String getVendorEmail() {
+        return vendorEmail;
+    }
+
+    public void setVendorEmail(String vendorEmail) {
+        this.vendorEmail = vendorEmail;
     }
 }
